@@ -6,7 +6,6 @@ import com.ravani.ravanibot.exceptions.UnsupportedDocumentException;
 import com.ravani.ravanibot.service.DocumentService;
 import org.apache.poi.xwpf.usermodel.XWPFDocument;
 import org.springframework.stereotype.Component;
-import java.io.File;
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
@@ -34,10 +33,6 @@ public class DocumentServiceIMpl implements DocumentService {
         return document;
     }
 
-    public void deleteDocument(File file) {
-
-    }
-
     private XWPFDocument loadFile(Long chatId, String filePath) {
         try (InputStream templateStream = getClass().getClassLoader().getResourceAsStream(filePath)){
             if (templateStream == null)
@@ -52,16 +47,16 @@ public class DocumentServiceIMpl implements DocumentService {
 
         Map<String, String> values = new HashMap<>();
         values.put("Поля0", passport.number());
-        values.put("Поля1", passport.person().surname());
-        values.put("Поля2", passport.person().name());
-        values.put("Поля3", patronymic);
+        values.put("Поля1", passport.person().surname().toUpperCase());
+        values.put("Поля2", passport.person().name().toUpperCase());
+        values.put("Поля3", patronymic.toUpperCase());
         values.put("Поля4", passport.person().birth_date());
         values.put("Поля5", passport.person().personal_number());
-        values.put("Поля6", passport.person().birth_place());
+        values.put("Поля6", passport.person().birth_place().toUpperCase());
         values.put("Поля7", passport.issueDate());
         values.put("Поля8", passport.expiryDate());
-        values.put("Поля9", passport.issueAuthority());
-        values.put("М1", passport.person().gender());
+        values.put("Поля9", passport.issueAuthority().toUpperCase());
+        values.put("М1", passport.person().gender().toUpperCase());
         return values;
     }
     private void replaceField(XWPFDocument doc, Map<String, String> values) {
