@@ -24,6 +24,7 @@ jobs:
         run: |
           ssh -o StrictHostKeyChecking=yes ${{ secrets.DO_USER }}@${{ secrets.DO_HOST }} "
             cd ravani-bot &&
+            git reset --hard HEAD &&
             git pull origin main &&
             chmod +x deploy.sh &&
             ./deploy.sh
