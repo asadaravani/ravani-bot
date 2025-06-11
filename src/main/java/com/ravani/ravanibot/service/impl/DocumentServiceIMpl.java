@@ -4,10 +4,11 @@ import com.ravani.ravanibot.dtos.Passport;
 import com.ravani.ravanibot.exceptions.FileDownloadingErrorException;
 import com.ravani.ravanibot.exceptions.UnsupportedDocumentException;
 import com.ravani.ravanibot.service.DocumentService;
-import org.apache.poi.xwpf.usermodel.XWPFDocument;
+import org.apache.poi.xwpf.usermodel.*;
 import org.springframework.stereotype.Component;
 import java.io.InputStream;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @Component
@@ -22,14 +23,18 @@ public class DocumentServiceIMpl implements DocumentService {
             document = loadFile(chatId, "docs/kgz_passport_new.docx");
         else if (kyrgyz && passport.number().toUpperCase().contains("AC"))
             document = loadFile(chatId, "docs/kgz_passport_old.docx");
-        else if (passport.country().toUpperCase().contains("УЗБЕК"))
+        else if (passport.country().toUpperCase().contains("УЗБЕК")) {
             document = loadFile(chatId, "docs/uzb_passport.docx");
+            Map<String, String> fields = mapFields(passport);
+            replaceFieldUzb(document, fields);
+            return document;
+        }
         else if (passport.country().toUpperCase().contains("ТАДЖИК"))
             document = loadFile(chatId, "docs/tjk_passport.docx");
         else throw new UnsupportedDocumentException(chatId, "❌Паспорт не поддерживается. Принимаются только паспорта КР, РУз или РТ.");
 
         Map<String, String> fields = mapFields(passport);
-        replaceField(document, fields);
+        replaceField(document.getParagraphs(), fields);
         return document;
     }
 
@@ -44,6 +49,7 @@ public class DocumentServiceIMpl implements DocumentService {
     }
     private Map<String, String> mapFields(Passport passport) {
         String patronymic = passport.person().patronymic() == null ? "" : passport.person().patronymic();
+        String birth_place = passport.person().birth_place() ==  null ? "" : passport.person().birth_place().toUpperCase();
 
         Map<String, String> values = new HashMap<>();
         values.put("Поля0", passport.number());
@@ -52,15 +58,15 @@ public class DocumentServiceIMpl implements DocumentService {
         values.put("Поля3", patronymic.toUpperCase());
         values.put("Поля4", passport.person().birth_date());
         values.put("Поля5", passport.person().personal_number());
-        values.put("Поля6", passport.person().birth_place().toUpperCase());
+        values.put("Поля6", birth_place);
         values.put("Поля7", passport.issueDate());
         values.put("Поля8", passport.expiryDate());
-        values.put("Поля9", passport.issueAuthority().toUpperCase());
-        values.put("М1", passport.person().gender().toUpperCase());
+        values.put("Поля9", translateAuthority(passport.issueAuthority().toUpperCase()));
+        values.put("Ген1", passport.person().gender().toUpperCase());
         return values;
     }
-    private void replaceField(XWPFDocument doc, Map<String, String> values) {
-        doc.getParagraphs().forEach(paragraph ->
+    private void replaceField(List<XWPFParagraph> paragraphs, Map<String, String> values) {
+        paragraphs.forEach(paragraph ->
                 paragraph.getRuns().forEach(run -> {
                     String text = run.getText(0);
                     if (text != null) {
@@ -72,5 +78,21 @@ public class DocumentServiceIMpl implements DocumentService {
                     }
                 })
         );
+    }
+    private void replaceFieldUzb(XWPFDocument doc, Map<String, String> values) {
+        doc.getTables().forEach(table -> {
+            table.getRows().forEach(row -> {
+                row.getTableCells().forEach(tableCell -> {
+                    replaceField(tableCell.getParagraphs(), values);
+                });
+            });
+        });
+    }
+    private String translateAuthority(String authority) {
+        if(authority.contains("SRS"))
+            authority = authority.replace("SRS", "ГРС");
+        if(authority.contains("MIA"))
+            authority = authority.replace("MIA", "МВД");
+        return authority;
     }
 }
