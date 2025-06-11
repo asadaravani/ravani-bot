@@ -73,7 +73,7 @@ public class BotServiceImpl implements BotService {
         if(passport.isPassport() == false){
             throw new UnsupportedDocumentException(message.getChatId(), "❌Это не паспорт!. Не тратьте наши ресурсы впустую.");
         }
-        //System.out.println(passport);
+        System.out.println(passport);
 
         XWPFDocument xwpfDocument = documentService.fillWordDocument(message.getChatId(), passport);
         sendFile(message.getChatId(), xwpfDocument, passport.person().surname() + ".docx");
