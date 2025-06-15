@@ -65,20 +65,16 @@ public class FileDownloaderImpl implements FileDownloader {
         String fieldId = getFieldId(message);
         GetFile getFile = new GetFile(fieldId);
         File file = sender.execute(getFile);
-        System.out.println("GetFile result: " + file);
         String filePath = file.getFilePath();
 
         if (filePath == null || filePath.isBlank()) {
             throw new FileDownloadingErrorException(message.getChatId(), "❌FilePath is null or empty");
         }
-        System.out.println("Resolved filePath: " + file.getFilePath());
-
         String downloadUrl = "https://api.telegram.org/file/bot" + ravaniBot.getBotToken();
         if (!filePath.startsWith("/")) {
             downloadUrl += "/";
         }
         downloadUrl += filePath;
-        System.out.println("Resolved download URL: " + downloadUrl);
         return downloadUrl;
     }
 }

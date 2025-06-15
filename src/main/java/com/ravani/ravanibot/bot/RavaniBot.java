@@ -3,14 +3,12 @@ package com.ravani.ravanibot.bot;
 import com.ravani.ravanibot.exceptions.BaseException;
 import com.ravani.ravanibot.exceptions.GlobalExceptionHandler;
 import com.ravani.ravanibot.service.BotService;
-import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.DefaultBotOptions;
 import org.telegram.telegrambots.meta.api.objects.Update;
-import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import org.telegram.telegrambots.meta.generics.LongPollingBot;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -39,6 +37,8 @@ public class RavaniBot implements LongPollingBot {
                 service.handleMessage(update.getMessage());
             }catch (BaseException e){
                 globalExceptionHandler.handle(e);
+            }catch (Exception e){
+                service.sendMessageToOwner("⚙️" + e.getMessage());
             }
         }
     }
