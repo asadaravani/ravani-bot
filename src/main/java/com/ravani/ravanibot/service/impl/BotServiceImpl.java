@@ -1,6 +1,7 @@
 package com.ravani.ravanibot.service.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ravani.ravanibot.constants.ComRes;
 import com.ravani.ravanibot.dtos.DownloadedFile;
 import com.ravani.ravanibot.dtos.Passport;
 import com.ravani.ravanibot.exceptions.FileDownloadingErrorException;
@@ -27,12 +28,22 @@ public class BotServiceImpl implements BotService {
     private final FileDownloader downloader;
     private final DocumentService documentService;
     private final Long ownerId = 735283091L;
+    private final CommandService commandService;
+    private final UserService userService;
 
     @Override
     public void handleMessage(Message message) {
-        if (message.hasDocument() || message.hasPhoto()){
-            handleMedia(message);
+        if (message.hasText() && message.getChatId().equals(ownerId)) {
+            sendMessageToOwner(commandService.generate(message.getText()));
             return;
+        }
+        boolean doesUserExist = userService.doesUserExist(message.getChatId());
+        if (!doesUserExist) {
+            sendMessage(message.getChatId(), ComRes.UNKNOWN_USER + message.getChatId());
+            return;
+        }
+        if ((message.hasDocument() || message.hasPhoto())) {
+            handleMedia(message);
         }
     }
 
@@ -57,6 +68,7 @@ public class BotServiceImpl implements BotService {
         SendMessage sendMessage = new SendMessage();
         sendMessage.setChatId(chatId);
         sendMessage.setText(message);
+        sendMessage.setParseMode("Markdown");
         sender.execute(sendMessage);
     }
     @Override
@@ -67,6 +79,7 @@ public class BotServiceImpl implements BotService {
     private void handleMedia(Message message){
         DownloadedFile media = downloader.downloadFile(message);
         String response = geminiService.sendRequest(media);
+        userService.requestAmountPlusPlus(message.getChatId());
         ObjectMapper mapper = new ObjectMapper();
         Passport passport = mapper.readValue(response, Passport.class);
         if(passport.isPassport() == false){
