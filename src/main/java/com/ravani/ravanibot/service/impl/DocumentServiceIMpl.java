@@ -1,13 +1,13 @@
 package com.ravani.ravanibot.service.impl;
 
 import com.ravani.ravanibot.dtos.Passport;
+import com.ravani.ravanibot.enums.Countries;
 import com.ravani.ravanibot.exceptions.FileDownloadingErrorException;
 import com.ravani.ravanibot.exceptions.UnsupportedDocumentException;
 import com.ravani.ravanibot.service.DocumentService;
 import org.apache.poi.xwpf.usermodel.*;
 import org.springframework.stereotype.Component;
 import java.io.InputStream;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -17,23 +17,41 @@ public class DocumentServiceIMpl implements DocumentService {
     @Override
     public XWPFDocument fillWordDocument(Long chatId, Passport passport) {
         XWPFDocument document;
-        boolean kyrgyz = passport.country().toUpperCase().contains("КЫРГЫЗ");
-
-        if (kyrgyz && passport.number().toUpperCase().contains("PE"))
-            document = loadFile(chatId, "docs/kgz_passport_new.docx");
-        else if (kyrgyz && passport.number().toUpperCase().contains("AC"))
-            document = loadFile(chatId, "docs/kgz_passport_old.docx");
-        else if (passport.country().toUpperCase().contains("УЗБЕК")) {
-            document = loadFile(chatId, "docs/uzb_passport.docx");
-            Map<String, String> fields = mapFields(passport);
-            replaceFieldUzb(document, fields);
-            return document;
+        Map<String, String> fields;
+        Countries country = detectCountry(chatId, passport.country().toUpperCase());
+        switch (country) {
+            case UZB -> {
+                document = loadFile(chatId, "docs/uzb_passport.docx");
+                fields = DocumentServiceUtil.mapFieldsUzb(passport);
+                replaceFieldInLayer(document, fields);
+                return document;
+            }
+            case ARM -> {
+                document = loadFile(chatId, "docs/arm_passport.docx");
+                fields = DocumentServiceUtil.mapFieldsArm(passport);
+                replaceFieldInLayer(document, fields);
+                return document;
+            }
+            case KGZ -> {
+                if (passport.number().toUpperCase().contains("AC")) {
+                    document = loadFile(chatId, "docs/kgz_passport_old.docx");
+                    fields = DocumentServiceUtil.mapFieldsKgzOld(passport);
+                    break;
+                }
+                    document = loadFile(chatId, "docs/kgz_passport_new.docx");
+                    fields = DocumentServiceUtil.mapFieldsKgzNew(passport);
+            }
+            case TJK -> {
+                document = loadFile(chatId, "docs/tjk_passport.docx");
+                fields = DocumentServiceUtil.mapFieldsTjk(passport);
+            }
+            case AZE ->  {
+                document = loadFile(chatId, "docs/aze_passport.docx");
+                fields = DocumentServiceUtil.mapFieldsAze(passport);
+            }
+            default -> throw new UnsupportedDocumentException(chatId, "Definitely unexpected exception in the DocService:switch. Contact _admin_");
         }
-        else if (passport.country().toUpperCase().contains("ТАДЖИК"))
-            document = loadFile(chatId, "docs/tjk_passport.docx");
-        else throw new UnsupportedDocumentException(chatId, "❌Паспорт не поддерживается. Принимаются только паспорта КР, РУз или РТ.");
 
-        Map<String, String> fields = mapFields(passport);
         replaceField(document.getParagraphs(), fields);
         return document;
     }
@@ -46,24 +64,6 @@ public class DocumentServiceIMpl implements DocumentService {
         }catch (Exception e){
             throw new FileDownloadingErrorException(chatId, "❌Cannot load file from 📁resources: " + filePath);
         }
-    }
-    private Map<String, String> mapFields(Passport passport) {
-        String patronymic = passport.person().patronymic() == null ? "" : passport.person().patronymic();
-        String birth_place = passport.person().birth_place() ==  null ? "" : passport.person().birth_place().toUpperCase();
-
-        Map<String, String> values = new HashMap<>();
-        values.put("Поля0", passport.number());
-        values.put("Поля1", passport.person().surname().toUpperCase());
-        values.put("Поля2", passport.person().name().toUpperCase());
-        values.put("Поля3", patronymic.toUpperCase());
-        values.put("Поля4", passport.person().birth_date());
-        values.put("Поля5", passport.person().personal_number());
-        values.put("Поля6", birth_place);
-        values.put("Поля7", passport.issueDate());
-        values.put("Поля8", passport.expiryDate());
-        values.put("Поля9", translateAuthority(passport.issueAuthority().toUpperCase()));
-        values.put("Ген1", passport.person().gender().toUpperCase());
-        return values;
     }
     private void replaceField(List<XWPFParagraph> paragraphs, Map<String, String> values) {
         paragraphs.forEach(paragraph ->
@@ -79,7 +79,7 @@ public class DocumentServiceIMpl implements DocumentService {
                 })
         );
     }
-    private void replaceFieldUzb(XWPFDocument doc, Map<String, String> values) {
+    private void replaceFieldInLayer(XWPFDocument doc, Map<String, String> values) {
         doc.getTables().forEach(table -> {
             table.getRows().forEach(row -> {
                 row.getTableCells().forEach(tableCell -> {
@@ -88,11 +88,17 @@ public class DocumentServiceIMpl implements DocumentService {
             });
         });
     }
-    private String translateAuthority(String authority) {
-        if(authority.contains("SRS"))
-            authority = authority.replace("SRS", "ГРС");
-        if(authority.contains("MIA"))
-            authority = authority.replace("MIA", "МВД");
-        return authority;
+    private Countries detectCountry(Long chatId, String country) {
+        return Map.of(
+                Countries.KGZ, "КЫРГЫЗ",
+                Countries.UZB, "УЗБЕК",
+                Countries.TJK, "ТАДЖИК",
+                Countries.AZE, "АЗЕР",
+                Countries.ARM, "АРМЕН"
+        ).entrySet().stream()
+                .filter(entry -> country.contains(entry.getValue()))
+                .map(Map.Entry::getKey)
+                .findFirst()
+                .orElseThrow(() -> new UnsupportedDocumentException(chatId, "❌Паспорт не поддерживается. Принимаются только паспорта KGZ, UZB, TJK, AZE, ARM."));
     }
 }
