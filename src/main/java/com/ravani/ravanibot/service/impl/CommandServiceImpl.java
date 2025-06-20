@@ -64,6 +64,6 @@ public class CommandServiceImpl implements CommandService {
         return response.toString();
     }
     private String userToString(BotUser user){
-        return "_" + user.getChatId() + "_ " + user.getName() + " made *" + user.getRequestAmount() + "* reqs\n";
+        return user.getChatId() + " " + user.getName() + " made " + user.getRequestAmount() + " reqs\n";
     }
 }
