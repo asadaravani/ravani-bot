@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ravani.ravanibot.constants.ComRes;
 import com.ravani.ravanibot.dtos.DownloadedFile;
 import com.ravani.ravanibot.dtos.Passport;
+import com.ravani.ravanibot.exceptions.AdminPanelException;
 import com.ravani.ravanibot.exceptions.FileDownloadingErrorException;
 import com.ravani.ravanibot.exceptions.UnsupportedDocumentException;
 import com.ravani.ravanibot.service.*;
@@ -62,14 +63,17 @@ public class BotServiceImpl implements BotService {
         }
 
     }
-    @SneakyThrows
     @Override
     public void sendMessage(Long chatId, String message){
-        SendMessage sendMessage = new SendMessage();
-        sendMessage.setChatId(chatId);
-        sendMessage.setText(message);
-        sendMessage.setParseMode("Markdown");
-        sender.execute(sendMessage);
+        try {
+            SendMessage sendMessage = new SendMessage();
+            sendMessage.setChatId(chatId);
+            sendMessage.setText(message);
+            sender.execute(sendMessage);
+        } catch (Exception e) {
+            System.err.println("Failed to send message to chatId " + chatId);
+            throw new AdminPanelException(e.getMessage());
+        }
     }
     @Override
     public void sendMessageToOwner(String message){

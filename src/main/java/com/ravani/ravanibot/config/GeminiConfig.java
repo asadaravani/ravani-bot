@@ -27,6 +27,7 @@ Rules:
 - All text must be translated into Russian, except numbers, document codes, and dates.
 - If a field is missing or not found, set its value to null (not "...").
 - Translate the letter J as Ж, not ДЖ, in Uzbek passport names.
+- Return English version of issue authority
 
 JSON output format:
 {
