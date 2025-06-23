@@ -1,5 +1,6 @@
 package com.ravani.ravanibot.config;
 
+import com.ravani.ravanibot.enums.DocumentType;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -12,11 +13,11 @@ import org.springframework.stereotype.Component;
 public class GeminiConfig {
     private String model;
     private String token;
-    private final String requestText = """
+    private final String requestTextPassport = """
 You are an expert in document analysis and sworn translation.
 
 Task:
-- Extract all relevant data from the provided passport image or scan.
+- Extract all relevant data from the provided passportDto image or scan.
 - Translate all necessary fields from the original language (which may be English or the official language of any country) into proper formal Russian, suitable for sworn translation.
 - Normalize and standardize terms as a sworn translator would do, even if the original text is already in Cyrillic.
 - Convert all dates to format: DD.MM.YYYY.
@@ -26,7 +27,7 @@ Rules:
 - Do NOT include any explanations, comments, or additional formatting.
 - All text must be translated into Russian, except numbers, document codes, and dates.
 - If a field is missing or not found, set its value to null (not "...").
-- Translate the letter J as Ж, not ДЖ, in Uzbek passport names.
+- Translate the letter J as Ж, not ДЖ, in Uzbek passportDto names.
 - Return English version of issue authority
 
 JSON output format:
@@ -48,6 +49,11 @@ JSON output format:
   }
 }
 """;
+    private final String requestTextDriverLicense = "";
+    public String getRequestText(DocumentType mode) {
+        if (mode == DocumentType.PASSPORT)
+            return requestTextPassport;
 
-
+        return requestTextDriverLicense;
+    }
 }

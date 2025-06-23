@@ -1,6 +1,9 @@
 package com.ravani.ravanibot.dtos;
 
-public record Person(
+import lombok.Builder;
+
+@Builder
+public record PersonDto(
         String surname,
         String name,
         String patronymic,

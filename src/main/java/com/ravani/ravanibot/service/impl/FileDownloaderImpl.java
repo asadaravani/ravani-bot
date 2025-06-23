@@ -1,7 +1,6 @@
 package com.ravani.ravanibot.service.impl;
 
 import com.ravani.ravanibot.bot.RavaniBot;
-import com.ravani.ravanibot.config.GeminiConfig;
 import com.ravani.ravanibot.dtos.DownloadedFile;
 import com.ravani.ravanibot.exceptions.FileDownloadingErrorException;
 import com.ravani.ravanibot.exceptions.NoPhotoOrDocumentException;
@@ -19,6 +18,7 @@ import org.telegram.telegrambots.meta.bots.AbsSender;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.URLConnection;
+import java.util.Objects;
 
 @Component
 @RequiredArgsConstructor
@@ -42,7 +42,8 @@ public class FileDownloaderImpl implements FileDownloader {
             if (bytes == null) throw new FileDownloadingErrorException(message.getChatId(), "❌Downloaded bytes are null");
 
             String contentType = URLConnection.guessContentTypeFromStream(new ByteArrayInputStream(bytes));
-            if (contentType == null) contentType = "application/octet-stream";
+            if (contentType == null || contentType.equals("application/octet-stream"))
+                contentType = getContentType(message);
 
             return DownloadedFile.builder().bytes(bytes).contentType(contentType).build();
         } catch (IOException e) {
@@ -76,5 +77,17 @@ public class FileDownloaderImpl implements FileDownloader {
         }
         downloadUrl += filePath;
         return downloadUrl;
+    }
+    private String getContentType(Message message) {
+        if (message.hasDocument()) {
+            String fileName = message.getDocument().getFileName().toLowerCase();
+            if (fileName.endsWith(".pdf")) return "application/pdf";
+            else if (fileName.endsWith(".txt")) return "text/plain";
+            else if (fileName.endsWith(".json")) return "application/json";
+            else if (fileName.endsWith(".jpg") || fileName.endsWith(".jpeg")) return "image/jpeg";
+            else if (fileName.endsWith(".png")) return "image/png";
+            else throw new FileDownloadingErrorException(message.getChatId(), "❌ Unsupported file type: " + fileName);
+        }
+        throw new FileDownloadingErrorException(message.getChatId(), "❌ Cannot detect content type.");
     }
 }
