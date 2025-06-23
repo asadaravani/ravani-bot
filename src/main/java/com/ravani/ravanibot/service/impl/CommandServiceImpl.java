@@ -3,17 +3,24 @@ package com.ravani.ravanibot.service.impl;
 import com.ravani.ravanibot.constants.ComRes;
 import com.ravani.ravanibot.entities.BotUser;
 import com.ravani.ravanibot.exceptions.AdminPanelException;
+import com.ravani.ravanibot.service.BotService;
 import com.ravani.ravanibot.service.CommandService;
 import com.ravani.ravanibot.service.UserService;
+import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class CommandServiceImpl implements CommandService {
 
-    private final UserService userService;
+    BotService botService;
+    final UserService userService;
 
     @Override
     public String generate(String message){
@@ -31,12 +38,20 @@ public class CommandServiceImpl implements CommandService {
             case ComRes.MANUAL -> {
                 return ComRes.MANUAL_COMMAND_RESPONSE;
             }
+            case ComRes.RESET ->  {
+                return handleResetCommand(words);
+            }
         }
         return ComRes.NO_COMMAND_FOUND;
     }
     private String handleAddCommand(String[] words){
         Long chatId = Long.parseLong(words[1]);
         userService.addUser(chatId, words[2]);
+        botService.sendMessage(chatId, ComRes.NEW_USER_GREETING);
+        return ComRes.POSITIVE_RESPONSE;
+    }
+    private String handleResetCommand(String[] words){
+        userService.resetRequestAmount(words[1]);
         return ComRes.POSITIVE_RESPONSE;
     }
     private String handleRemoveCommand(String[] words){
@@ -65,5 +80,11 @@ public class CommandServiceImpl implements CommandService {
     }
     private String userToString(BotUser user){
         return user.getChatId() + " " + user.getName() + " made " + user.getRequestAmount() + " reqs\n";
+    }
+
+    @Lazy
+    @Autowired
+    public void setBotService(BotService botService) {
+        this.botService = botService;
     }
 }

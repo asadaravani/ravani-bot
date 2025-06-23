@@ -4,11 +4,13 @@ import com.google.genai.Client;
 import com.google.genai.types.*;
 import com.ravani.ravanibot.config.GeminiConfig;
 import com.ravani.ravanibot.dtos.DownloadedFile;
+import com.ravani.ravanibot.enums.DocumentType;
 import com.ravani.ravanibot.service.GeminiService;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import org.springframework.stereotype.Service;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -24,8 +26,8 @@ public class GeminiServiceImpl implements GeminiService {
     }
 
     @Override
-    public String sendRequest(DownloadedFile file) {
-        Content content = getContent(file.bytes(), file.contentType());
+    public String sendRequest(List<DownloadedFile> files, DocumentType type) {
+        Content content = getContent(files, type);
         GenerateContentConfig config = getContentConfig();
         GenerateContentResponse response = client.models.generateContent(
                 geminiConfig.getModel(), content, config
@@ -39,11 +41,12 @@ public class GeminiServiceImpl implements GeminiService {
                 .build();
     }
     @SneakyThrows
-    private Content getContent(byte[] file, String contentType) {
-        Part imagePart = Part.fromBytes(file,contentType);
-        Part textPart = Part.fromText(geminiConfig.getRequestText());
+    private Content getContent(List<DownloadedFile> files, DocumentType documentType) {
+        List<Part>  parts = new ArrayList<>();
+        files.forEach(file -> parts.add(Part.fromBytes(file.bytes(),  file.contentType())));
+        parts.add(Part.fromText(geminiConfig.getRequestText(documentType)));
         return Content.builder()
-                .parts(List.of(imagePart, textPart) )
+                .parts(parts)
                 .build();
     }
 }

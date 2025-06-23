@@ -1,7 +1,6 @@
 package com.ravani.ravanibot.enums;
 
-public enum TranslationMode {
+public enum DocumentType {
     PASSPORT,
-    ID_CARD,
     DRIVER_LICENSE
 }

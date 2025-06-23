@@ -1,5 +1,6 @@
 package com.ravani.ravanibot.entities;
 
+import com.ravani.ravanibot.enums.DocumentType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -21,4 +22,5 @@ public class BotUser {
     Long chatId;
     String name;
     BigInteger requestAmount;
+    DocumentType documentType;
 }

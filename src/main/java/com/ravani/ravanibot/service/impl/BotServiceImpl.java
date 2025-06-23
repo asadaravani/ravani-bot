@@ -1,15 +1,17 @@
 package com.ravani.ravanibot.service.impl;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ravani.ravanibot.constants.ComRes;
+import com.ravani.ravanibot.dtos.DocumentDto;
 import com.ravani.ravanibot.dtos.DownloadedFile;
-import com.ravani.ravanibot.dtos.Passport;
+import com.ravani.ravanibot.enums.DocumentType;
 import com.ravani.ravanibot.exceptions.AdminPanelException;
 import com.ravani.ravanibot.exceptions.FileDownloadingErrorException;
 import com.ravani.ravanibot.exceptions.UnsupportedDocumentException;
 import com.ravani.ravanibot.service.*;
+import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
+import lombok.experimental.FieldDefaults;
 import org.apache.poi.xwpf.usermodel.XWPFDocument;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.methods.send.SendDocument;
@@ -19,18 +21,26 @@ import org.telegram.telegrambots.meta.api.objects.Message;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 @RequiredArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE,  makeFinal = true)
 public class BotServiceImpl implements BotService {
 
-    private final GeminiService geminiService;
-    private final TelegramSender sender;
-    private final FileDownloader downloader;
-    private final DocumentService documentService;
-    private final Long ownerId = 735283091L;
-    private final CommandService commandService;
-    private final UserService userService;
+    CommandService commandService;
+    GeminiService geminiService;
+    TelegramSender sender;
+    FileDownloader downloader;
+    DocumentService documentService;
+    Long ownerId = 735283091L;
+    Integer WAITING_TIME_MILLIS = 5000;
+    UserService userService;
+    Map<Long, List<DownloadedFile>> tempFiles = new ConcurrentHashMap<>();
+    Map<Long, Boolean> isWaiting = new ConcurrentHashMap<>();
 
     @Override
     public void handleMessage(Message message) {
@@ -71,7 +81,6 @@ public class BotServiceImpl implements BotService {
             sendMessage.setText(message);
             sender.execute(sendMessage);
         } catch (Exception e) {
-            System.err.println("Failed to send message to chatId " + chatId);
             throw new AdminPanelException(e.getMessage());
         }
     }
@@ -81,16 +90,45 @@ public class BotServiceImpl implements BotService {
     }
     @SneakyThrows
     private void handleMedia(Message message){
-        DownloadedFile media = downloader.downloadFile(message);
-        String response = geminiService.sendRequest(media);
-        userService.requestAmountPlusPlus(message.getChatId());
-        ObjectMapper mapper = new ObjectMapper();
-        Passport passport = mapper.readValue(response, Passport.class);
-        if(passport.isPassport() == false){
-            throw new UnsupportedDocumentException(message.getChatId(), "❌Это не паспорт!. Не тратьте наши ресурсы впустую.");
+        Long chatId = message.getChatId();
+        DocumentType type = userService.getUserByChatId(chatId).getDocumentType();
+        DownloadedFile file = downloader.downloadFile(message);
+        if (type == DocumentType.PASSPORT) {
+            processFile(chatId, List.of(file), type);
+            return;
         }
-        XWPFDocument xwpfDocument = documentService.fillWordDocument(message.getChatId(), passport);
-        sendFile(message.getChatId(), xwpfDocument, passport.person().surname().toUpperCase() + ".docx");
-    }
+        tempFiles.putIfAbsent(chatId, new ArrayList<>());
+        List<DownloadedFile> filesList = tempFiles.get(chatId);
+        filesList.add(file);
+        if (filesList.size() >= 2) {
+            processFile(chatId, filesList.subList(0, 2), type);
+            filesList.subList(0, 2).clear();
+            return;
+        }
+        if (Boolean.TRUE.equals(isWaiting.get(chatId))) return;
 
+        isWaiting.put(chatId, true);
+        new Thread(() -> {
+            try {
+                Thread.sleep(WAITING_TIME_MILLIS);
+                List<DownloadedFile> currentFiles = tempFiles.get(chatId);
+                if (currentFiles.size() == 1) {
+                    processFile(chatId, List.of(currentFiles.get(0)), type);
+                    currentFiles.clear();
+                }
+            } catch (InterruptedException ignored) {
+            } finally {
+                isWaiting.put(chatId, false);
+            }
+        }).start();
+    }
+    private void processFile(Long chatId, List<DownloadedFile> files, DocumentType type) {
+        String response = geminiService.sendRequest(files, type);
+        userService.requestAmountPlusPlus(chatId);
+        DocumentDto dto = documentService.mapToDocumentDto(response, type);
+        if(!dto.isDocument())
+            throw new UnsupportedDocumentException(chatId, ComRes.getInvalidDocumentResponse(type));
+        XWPFDocument xwpfDocument = documentService.fillWordDocument(chatId, dto);
+        sendFile(chatId, xwpfDocument, dto.getPerson().surname() + ".docx");
+    }
 }

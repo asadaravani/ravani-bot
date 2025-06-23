@@ -1,6 +1,7 @@
 package com.ravani.ravanibot.service.impl;
 
 import com.ravani.ravanibot.entities.BotUser;
+import com.ravani.ravanibot.enums.DocumentType;
 import com.ravani.ravanibot.exceptions.AdminPanelException;
 import com.ravani.ravanibot.repos.UserRepository;
 import com.ravani.ravanibot.service.UserService;
@@ -38,6 +39,14 @@ public class UserServiceImpl implements UserService {
         BotUser user = new BotUser();
         user.setChatId(chatId);
         user.setName(name);
+        user.setDocumentType(DocumentType.PASSPORT);
+        repository.save(user);
+    }
+
+    @Override
+    public void resetRequestAmount(String name) {
+        BotUser user = getUserByName(name);
+        user.setRequestAmount(BigInteger.ZERO);
         repository.save(user);
     }
 
@@ -65,5 +74,12 @@ public class UserServiceImpl implements UserService {
         }catch (AdminPanelException e) {
             return false;
         }
+    }
+
+    @Override
+    public void setTranslationMode(Long chatId, DocumentType documentType) {
+        BotUser user = getUserByChatId(chatId);
+        user.setDocumentType(documentType);
+        repository.save(user);
     }
 }
