@@ -52,7 +52,7 @@ public class PassportDocGenerator {
                 document = loadFile(chatId, "bema/aze_passport.docx");
                 fields = mapFieldsAze(passportDto);
             }
-            default -> throw new UnsupportedDocumentException(chatId, "Definitely unexpected exception in the DocService:switch. Contact _admin_");
+            default -> throw new UnsupportedDocumentException(chatId, "❌Только паспорта UZB, ARM, KGZ, TJK, AZE");
         }
         replaceField(document.getParagraphs(), fields);
         return document;
