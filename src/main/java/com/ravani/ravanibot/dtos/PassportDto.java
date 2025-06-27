@@ -11,7 +11,7 @@ public final class PassportDto extends DocumentDto {
     @JsonCreator
     public PassportDto(
             @JsonProperty("isPassport") boolean isPassport,
-            @JsonProperty("country") String country,
+            @JsonProperty("country_code") String country_code,
             @JsonProperty("number") String number,
             @JsonProperty("issueDate") String issueDate,
             @JsonProperty("expiryDate") String expiryDate,
@@ -19,7 +19,14 @@ public final class PassportDto extends DocumentDto {
             @JsonProperty("person") PersonDto person
 
     ) {
-        super(country, number, issueDate, expiryDate, issueAuthority, person);
+        super(country_code, number, issueDate, expiryDate, issueAuthority, person);
         this.isPassport = isPassport;
+    }
+
+    @Override
+    public String toString() {
+        return "PassportDto{" +
+                "isPassport=" + isPassport +
+                "} " + super.toString();
     }
 }

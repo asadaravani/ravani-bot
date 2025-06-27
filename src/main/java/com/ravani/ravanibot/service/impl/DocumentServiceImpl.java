@@ -21,7 +21,7 @@ public class DocumentServiceImpl implements DocumentService {
 
     @Override
     public XWPFDocument fillWordDocument(Long chatId, DocumentDto dto) {
-        Countries country = detectCountry(chatId, dto.getCountry());
+        Countries country = detectCountry(chatId, dto.getCountry_code());
         return dto instanceof PassportDto ? PassportDocGenerator.execute(country, (PassportDto) dto, chatId)
                 : DriverLicenseDocGenerator.execute(country, (DriverLicenseDto) dto, chatId);
     }
@@ -60,24 +60,35 @@ public class DocumentServiceImpl implements DocumentService {
     }
     static void replaceFieldInLayer(XWPFDocument doc, Map<String, String> values) {
         doc.getTables().forEach(table -> {
-            table.getRows().forEach(row -> {
-                row.getTableCells().forEach(tableCell -> {
-                    replaceField(tableCell.getParagraphs(), values);
+            replaceFieldInTables(table, values);
+        });
+    }
+    static void replaceFieldInTables(XWPFTable table, Map<String, String> values) {
+        table.getRows().forEach(row -> {
+            row.getTableCells().forEach(tableCell -> {
+                replaceField(tableCell.getParagraphs(), values);
+
+                tableCell.getTables().forEach(nestedTable -> {
+                    replaceFieldInTables(nestedTable, values);
                 });
             });
         });
     }
-    private Countries detectCountry(Long chatId, String country) {
-        return Map.of(
-                Countries.KGZ, "КЫРГЫЗ",
-                Countries.UZB, "УЗБЕК",
-                Countries.TJK, "ТАДЖИК",
-                Countries.AZE, "АЗЕР",
-                Countries.ARM, "АРМЕН"
-        ).entrySet().stream()
-                .filter(entry -> country.contains(entry.getValue()))
-                .map(Map.Entry::getKey)
-                .findFirst()
-                .orElseThrow(() -> new UnsupportedDocumentException(chatId, "❌Паспорт не поддерживается. Принимаются только паспорта KGZ, UZB, TJK, AZE, ARM."));
+    private Countries detectCountry(Long chatId, String country_code) {
+        Countries country;
+        switch (country_code) {
+            case "KGZ" -> country = Countries.KGZ;
+            case "UZB" -> country = Countries.UZB;
+            case "TJK" -> country = Countries.TJK;
+            case "KAZ" -> country = Countries.KAZ;
+            case "TKM" -> country = Countries.TKM;
+            case "AZE" -> country = Countries.AZE;
+            case "ARM" -> country = Countries.ARM;
+            case "TUR" -> country = Countries.TUR;
+            case "IND" -> country = Countries.IND;
+            default ->
+                    throw new UnsupportedDocumentException(chatId, "❌Паспорт " + country_code + " не поддерживается");
+        }
+        return country;
     }
 }

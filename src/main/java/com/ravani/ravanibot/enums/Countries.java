@@ -5,5 +5,9 @@ public enum Countries {
     UZB,
     TJK,
     ARM,
-    AZE
+    AZE,
+    IND,
+    TKM,
+    TUR,
+    KAZ
 }

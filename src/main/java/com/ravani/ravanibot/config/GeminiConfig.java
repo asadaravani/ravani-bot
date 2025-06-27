@@ -14,12 +14,13 @@ public class GeminiConfig {
     private String model;
     private String token;
     private final String requestTextPassport = """
-You are an expert in document analysis and sworn translation.
+You are an expert in document analysis and sworn translation into Russian.
 
 Task:
 - Extract all relevant data from the provided passportDto image or scan.
-- Translate all necessary fields from the original language (which may be English or the official language of any country) into proper formal Russian, suitable for sworn translation.
-- Normalize and standardize terms as a sworn translator would do, even if the original text is already in Cyrillic.
+- Translate all into Russian language.
+- In Indian, Turkish passports, translate all data into Russian language.
+- Gender will be Ж or М.
 - Convert all dates to format: DD.MM.YYYY.
 
 Rules:
@@ -27,13 +28,12 @@ Rules:
 - Do NOT include any explanations, comments, or additional formatting.
 - All text must be translated into Russian, except numbers, document codes, and dates.
 - If a field is missing or not found, set its value to null (not "...").
-- Translate the letter J as Ж, not ДЖ, in Uzbek passportDto names.
-- Return English version of issue authority
+- Only in Uzbek passport names, translate the letter J as Ж, not ДЖ.
 
 JSON output format:
 {
   "isPassport": true,
-  "country": "КЫРГЫЗСКАЯ РЕСПУБЛИКА",
+  "country_code": "KGZ",
   "number": "PE1234567",
   "issueDate": "01.01.2020",
   "expiryDate": "01.01.2030",
@@ -43,7 +43,7 @@ JSON output format:
     "name": "АЛЕКСАНДР",
     "patronymic": "АЛЕКСАНДРОВИЧ",
     "birth_date": "31.06.2003",
-    "gender": "М",
+    "gender": "Ж",
     "birth_place": "Кыргызская Республика",
     "personal_number": "21004500200010"
   }

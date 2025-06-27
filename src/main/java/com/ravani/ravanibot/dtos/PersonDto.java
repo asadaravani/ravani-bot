@@ -10,5 +10,6 @@ public record PersonDto(
         String birth_date,
         String gender,
         String birth_place,
-        String personal_number
+        String personal_number,
+        String nationality
 ) {}
