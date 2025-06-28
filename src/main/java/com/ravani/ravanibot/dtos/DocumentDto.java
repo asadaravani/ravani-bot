@@ -9,14 +9,16 @@ public sealed abstract class DocumentDto permits PassportDto, DriverLicenseDto {
     private final String issueDate;
     private final String expiryDate;
     private final String issueAuthority;
+    private final String place_of_issue;
     private final PersonDto person;
 
-    public DocumentDto(String country_code, String number, String issueDate, String expiryDate, String issueAuthority, PersonDto person) {
+    public DocumentDto(String country_code, String number, String issueDate, String expiryDate, String issueAuthority, String place_of_issue, PersonDto person) {
         this.country_code = validateField(country_code);
         this.number = validateField(number);
         this.issueDate = validateField(issueDate);
         this.expiryDate = validateField(expiryDate);
         this.issueAuthority = validateField(issueAuthority);
+        this.place_of_issue = validateField(place_of_issue);
         this.person = person;
     }
 

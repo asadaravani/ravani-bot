@@ -16,7 +16,6 @@ import static com.ravani.ravanibot.service.impl.DocumentServiceImpl.*;
 public class PassportDocGenerator {
 
     static XWPFDocument execute(Countries country, PassportDto passportDto, Long chatId) {
-        System.err.println(passportDto.toString());
         Map<String, String> fields;
         XWPFDocument document;
         if (Objects.equals(chatId, SpecialUserDetails.GULMIRA_CHAT_ID)) {
@@ -91,7 +90,11 @@ public class PassportDocGenerator {
                 document =  loadFile(chatId, "gulmira/kaz_passport.docx");
                 fields = mapFieldsKgzNew(passportDto);
             }
-            default -> throw new UnsupportedDocumentException(chatId, "❌Только паспорта UZB, IND, TUR, TKM, AZE, KAZ");
+            case TJK -> {
+                document = loadFile(chatId, "gulmira/tjk_passport.docx");
+                fields = mapFieldsTjk(passportDto);
+            }
+            default -> throw new UnsupportedDocumentException(chatId, "❌Только паспорта UZB, IND, TUR, TKM, AZE, KAZ, TJK");
         }
         replaceFieldInLayer(document, fields);
         return document;
@@ -114,6 +117,7 @@ public class PassportDocGenerator {
     private static Map<String, String> mapFieldsInd(PassportDto dto) {
         Map<String, String> values = mapFieldsTjk(dto);
         values.put("Поля6", dto.getPerson().birth_place());
+        values.put("Поля9", dto.getPlace_of_issue());
         values.put("Поля2", dto.getPerson().name());
         return values;
     }
@@ -186,6 +190,8 @@ public class PassportDocGenerator {
             authority = authority.replace("MIA", "МВД");
         if (authority.contains("PSK"))
             authority = authority.replace("PSK", "ГЦП");
+        if (authority.contains("ХШБ"))
+            authority = authority.replace("ХШБ", "ПРС");
         if (authority.equals("MINISTRY OF INTERNAL AFFAIRS"))
             authority = "МИНИСТЕРСТВО ВНУТРЕННИХ ДЕЛ";
         if (authority.contains("SMST"))

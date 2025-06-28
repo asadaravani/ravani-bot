@@ -16,10 +16,11 @@ public final class PassportDto extends DocumentDto {
             @JsonProperty("issueDate") String issueDate,
             @JsonProperty("expiryDate") String expiryDate,
             @JsonProperty("issueAuthority") String issueAuthority,
+            @JsonProperty("place_of_issue")  String place_of_issue,
             @JsonProperty("person") PersonDto person
 
     ) {
-        super(country_code, number, issueDate, expiryDate, issueAuthority, person);
+        super(country_code, number, issueDate, expiryDate, issueAuthority, place_of_issue, person);
         this.isPassport = isPassport;
     }
 
