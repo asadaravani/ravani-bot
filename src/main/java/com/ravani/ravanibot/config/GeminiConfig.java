@@ -13,42 +13,6 @@ import org.springframework.stereotype.Component;
 public class GeminiConfig {
     private String model;
     private String token;
-//    private final String requestTextPassport = """
-//You are an expert in document analysis and sworn translation into Russian.
-//
-//Task:
-//- Extract all relevant data from the provided passportDto image or scan.
-//- Translate all into Russian language.
-//- In Indian, Turkish passports, translate all data into Russian language.
-//- Gender will be Ж or М.
-//- Convert all dates to format: DD.MM.YYYY.
-//
-//Rules:
-//- Output only a valid JSON object, matching the structure below.
-//- Do NOT include any explanations, comments, or additional formatting.
-//- All text must be translated into Russian, except numbers, document codes, and dates.
-//- If a field is missing or not found, set its value to null (not "...").
-//- Only in Uzbek passport names, translate the letter J as Ж, not ДЖ.
-//
-//JSON output format:
-//{
-//  "isPassport": true,
-//  "country_code": "KGZ",
-//  "number": "PE1234567",
-//  "issueDate": "01.01.2020",
-//  "expiryDate": "01.01.2030",
-//  "issueAuthority": "MIA 213031",
-//  "person": {
-//    "surname": "ПЕТРОВ",
-//    "name": "АЛЕКСАНДР",
-//    "patronymic": "АЛЕКСАНДРОВИЧ",
-//    "birth_date": "31.06.2003",
-//    "gender": "Ж",
-//    "birth_place": "Кыргызская Республика",
-//    "personal_number": "21004500200010"
-//  }
-//}
-//""";
     private final String requestTextPassport = """
 You are an expert in document analysis and sworn translation.
 
@@ -65,6 +29,7 @@ Rules:
 - All text must be translated into Russian, except numbers, document codes, and dates.
 - If a field is missing or not found, set its value to null (not "...").
 - Only in Uzbek passport names, translate the letter J as Ж, not ДЖ.
+- Translate Turkmen and Turkish names properly.
 - Return English version of issue authority.
 
 JSON output format:
@@ -75,55 +40,19 @@ JSON output format:
   "issueDate": "01.01.2020",
   "expiryDate": "01.01.2030",
   "issueAuthority": "MIA 213031",
-  "place_of_issue": "СТАМБУЛ",
+  "place_of_issue": "НЬЮ-ЙОРК",
   "person": {
     "surname": "СЕРГЕЕВ",
     "name": "ВЛАДИСЛАВ",
     "patronymic": "АЛЕКСАНДРОВИЧ",
     "birth_date": "31.06.2003",
     "gender": "М",
-    "birth_place": "АНКАРА",
+    "birth_place": "КЫРГЫЗСКАЯ РЕСПУБЛИКА",
     "personal_number": "21004500200010"
   }
 }
 //""";
-//    private final String requestTextPassport = """
-//Вы — эксперт по анализу документов и присяжному переводу.
-//
-//Задача:
-//- Извлеките все необходимые данные из предоставленного изображения или скана паспорта.
-//- Переведите все необходимые поля с оригинального языка (это может быть английский или официальный язык любой страны) на корректный формальный русский язык, подходящий для присяжного перевода.
-//- Нормализуйте и стандартизируйте термины, как это делает присяжный переводчик, даже если исходный текст уже на кириллице.
-//- Преобразуйте все даты в формат: ДД.ММ.ГГГГ.
-//- Пол указывается как Ж или М.
-//
-//Правила:
-//- На выходе должен быть только корректный JSON-объект, соответствующий структуре ниже.
-//- НЕ включайте объяснений, комментариев или дополнительного форматирования.
-//- Весь текст должен быть переведён на русский язык, за исключением чисел, кодов документов и дат.
-//- Если поле отсутствует или не найдено, укажите его значение как null (а не "...").
-//- Только в узбекских именах переводите букву J как Ж, а не ДЖ.
-//- Если орган выдачи — это не учреждение, такое как MIA или SMTP, а название города или населённого пункта, переведите его на русский язык.
-//
-//Формат выходного JSON:
-//{
-//  "isPassport": true,
-//  "country_code": "IND",
-//  "number": "PE1234567",
-//  "issueDate": "01.01.2020",
-//  "expiryDate": "01.01.2030",
-//  "issueAuthority": "MIA 213031",
-//  "person": {
-//    "surname": "CЕРГЕЕВ",
-//    "name": "ОЛЕГ",
-//    "patronymic": "АЛЕКСАНДРОВИЧ",
-//    "birth_date": "31.06.2003",
-//    "gender": "М",
-//    "birth_place": "АНКАРА",
-//    "personal_number": "21004500200010"
-//  }
-//}
-//""";
+
 
     private final String requestTextDriverLicense = "";
     public String getRequestText(DocumentType mode) {
