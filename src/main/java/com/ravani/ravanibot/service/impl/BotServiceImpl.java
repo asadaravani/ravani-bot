@@ -129,6 +129,9 @@ public class BotServiceImpl implements BotService {
         if(!dto.isDocument())
             throw new UnsupportedDocumentException(chatId, ComRes.getInvalidDocumentResponse(type));
         XWPFDocument xwpfDocument = documentService.fillWordDocument(chatId, dto);
-        sendFile(chatId, xwpfDocument, dto.getPerson().surname() + ".docx");
+
+        String patronymic = dto.getPerson().patronymic().isEmpty() ? "" : " " + dto.getPerson().patronymic();
+        String fileName = dto.getPerson().surname() + " "  + dto.getPerson().name() + patronymic + ".docx";
+        sendFile(chatId, xwpfDocument, fileName);
     }
 }

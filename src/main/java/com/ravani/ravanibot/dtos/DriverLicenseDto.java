@@ -18,9 +18,10 @@ public final class DriverLicenseDto extends DocumentDto {
             @JsonProperty("issueDate") String issueDate,
             @JsonProperty("expiryDate") String expiryDate,
             @JsonProperty("issueAuthority") String issueAuthority,
+            @JsonProperty("place_of_issue")  String place_of_issue,
             @JsonProperty("person") PersonDto person
     ) {
-        super(country, number, issueDate, expiryDate, issueAuthority, person);
+        super(country, number, issueDate, expiryDate, issueAuthority,place_of_issue, person);
         this.place_of_residence = validateField(place_of_residence);
         this.special_marks = validateField(special_marks);
         this.isDriverLicense = isDriverLicense;
