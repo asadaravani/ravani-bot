@@ -16,6 +16,7 @@ import static com.ravani.ravanibot.service.impl.DocumentServiceImpl.*;
 public class PassportDocGenerator {
 
     static XWPFDocument execute(Countries country, PassportDto passportDto, Long chatId) {
+        System.out.println(passportDto.toString());
         Map<String, String> fields;
         XWPFDocument document;
         if (Objects.equals(chatId, SpecialUserDetails.GULMIRA_CHAT_ID)) {
@@ -225,6 +226,14 @@ public class PassportDocGenerator {
         if (birthPlace.contains("TKM") ||  birthPlace.contains("ТКМ")) {
             return "ТУРКМЕНИСТАН";
         }
+        if (birthPlace.contains("UZB") || birthPlace.contains("УЗБ"))
+            return "УЗБЕКИСТАН";
+        if (birthPlace.contains("TJK") || birthPlace.contains("ТЖК"))
+            return "ТАДЖИКИСТАН";
+        if (birthPlace.contains("TUR") || birthPlace.contains("ТУР"))
+            return "ТУРЦИЯ";
+        if (birthPlace.contains("RUS") || birthPlace.contains("РУС"))
+            return "РОССИЯ";
         return birthPlace;
     }
     private static String detectTurkishPassGen(String issueDate) {
