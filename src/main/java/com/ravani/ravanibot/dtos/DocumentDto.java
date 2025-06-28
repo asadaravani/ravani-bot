@@ -57,6 +57,7 @@ public sealed abstract class DocumentDto permits PassportDto, DriverLicenseDto {
                 ", issueDate='" + issueDate + '\'' +
                 ", expiryDate='" + expiryDate + '\'' +
                 ", issueAuthority='" + issueAuthority + '\'' +
+                ", place_of_issue='" + place_of_issue + '\'' +
                 ", person=" + person +
                 '}';
     }
