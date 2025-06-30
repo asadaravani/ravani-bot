@@ -51,7 +51,7 @@ JSON output format:
     "personal_number": "21004500200010"
   }
 }
-//""";
+""";
 
 
     private final String requestTextDriverLicense = "";
