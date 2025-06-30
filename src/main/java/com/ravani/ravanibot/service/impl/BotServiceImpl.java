@@ -1,8 +1,10 @@
 package com.ravani.ravanibot.service.impl;
 
 import com.ravani.ravanibot.constants.ComRes;
+import com.ravani.ravanibot.constants.SpecialUserDetails;
 import com.ravani.ravanibot.dtos.DocumentDto;
 import com.ravani.ravanibot.dtos.DownloadedFile;
+import com.ravani.ravanibot.dtos.PersonDto;
 import com.ravani.ravanibot.enums.DocumentType;
 import com.ravani.ravanibot.exceptions.AdminPanelException;
 import com.ravani.ravanibot.exceptions.FileDownloadingErrorException;
@@ -24,6 +26,7 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Service
@@ -130,8 +133,14 @@ public class BotServiceImpl implements BotService {
             throw new UnsupportedDocumentException(chatId, ComRes.getInvalidDocumentResponse(type));
         XWPFDocument xwpfDocument = documentService.fillWordDocument(chatId, dto);
 
-        String patronymic = dto.getPerson().patronymic().isEmpty() ? "" : " " + dto.getPerson().patronymic();
-        String fileName = dto.getPerson().surname() + " "  + dto.getPerson().name() + patronymic + ".docx";
-        sendFile(chatId, xwpfDocument, fileName);
+        sendFile(chatId, xwpfDocument, getFileName(chatId, dto.getPerson()));
+    }
+    private String getFileName(Long chatId, PersonDto dto) {
+        String patronymic = dto.patronymic().isEmpty() ? "" : " " + dto.patronymic();
+
+        if(Objects.equals(chatId, SpecialUserDetails.GULMIRA_CHAT_ID))
+            return dto.surname() + " "  + dto.name() + patronymic + ".docx";
+
+        return dto.surname() + ".docx";
     }
 }

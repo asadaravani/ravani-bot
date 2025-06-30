@@ -16,7 +16,6 @@ import static com.ravani.ravanibot.service.impl.DocumentServiceImpl.*;
 public class PassportDocGenerator {
 
     static XWPFDocument execute(Countries country, PassportDto passportDto, Long chatId) {
-        System.out.println(passportDto.toString());
         Map<String, String> fields;
         XWPFDocument document;
         if (Objects.equals(chatId, SpecialUserDetails.GULMIRA_CHAT_ID)) {
