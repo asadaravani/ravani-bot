@@ -229,8 +229,8 @@ public class PassportDocGenerator {
             return "УЗБЕКИСТАН";
         if (birthPlace.contains("TJK") || birthPlace.contains("ТЖК"))
             return "ТАДЖИКИСТАН";
-        if (birthPlace.contains("TUR") || birthPlace.contains("ТУР"))
-            return "ТУРЦИЯ";
+        if (birthPlace.contains("STATE PERSONALIZATION CENTRE"))
+            return "ГОСУДАРСТВЕННЫЙ ЦЕНТР ПЕРСОНАЛИЗАЦИИ";
         if (birthPlace.contains("RUS") || birthPlace.contains("РУС"))
             return "РОССИЯ";
         return birthPlace;

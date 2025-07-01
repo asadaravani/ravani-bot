@@ -49,6 +49,7 @@ JSON output format:
     "gender": "М",
     "birth_place": "КЫРГЫЗСКАЯ РЕСПУБЛИКА",
     "personal_number": "21004500200010"
+    "nationality": "УЗБЕК",
   }
 }
 """;
