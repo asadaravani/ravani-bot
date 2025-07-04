@@ -82,8 +82,6 @@ public class FileDownloaderImpl implements FileDownloader {
         if (message.hasDocument()) {
             String fileName = message.getDocument().getFileName().toLowerCase();
             if (fileName.endsWith(".pdf")) return "application/pdf";
-            else if (fileName.endsWith(".txt")) return "text/plain";
-            else if (fileName.endsWith(".json")) return "application/json";
             else if (fileName.endsWith(".jpg") || fileName.endsWith(".jpeg")) return "image/jpeg";
             else if (fileName.endsWith(".png")) return "image/png";
             else throw new FileDownloadingErrorException(message.getChatId(), "❌ Unsupported file type: " + fileName);

@@ -5,11 +5,14 @@ import com.ravani.ravanibot.constants.SpecialUserDetails;
 import com.ravani.ravanibot.dtos.DocumentDto;
 import com.ravani.ravanibot.dtos.DownloadedFile;
 import com.ravani.ravanibot.dtos.PersonDto;
+import com.ravani.ravanibot.entities.BotUser;
+import com.ravani.ravanibot.enums.CountryCode;
 import com.ravani.ravanibot.enums.DocumentType;
 import com.ravani.ravanibot.exceptions.AdminPanelException;
 import com.ravani.ravanibot.exceptions.FileDownloadingErrorException;
 import com.ravani.ravanibot.exceptions.UnsupportedDocumentException;
 import com.ravani.ravanibot.service.*;
+import com.ravani.ravanibot.utils.CountryCodeExtractor;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
@@ -44,6 +47,7 @@ public class BotServiceImpl implements BotService {
     UserService userService;
     Map<Long, List<DownloadedFile>> tempFiles = new ConcurrentHashMap<>();
     Map<Long, Boolean> isWaiting = new ConcurrentHashMap<>();
+    CountryCodeExtractor countryCodeExtractor = new CountryCodeExtractor();
 
     @Override
     public void handleMessage(Message message) {
@@ -94,7 +98,8 @@ public class BotServiceImpl implements BotService {
     @SneakyThrows
     private void handleMedia(Message message){
         Long chatId = message.getChatId();
-        DocumentType type = userService.getUserByChatId(chatId).getDocumentType();
+        BotUser user = userService.getUserByChatId(chatId);
+        DocumentType type = user.getDocumentType();
         DownloadedFile file = downloader.downloadFile(message);
         if (type == DocumentType.PASSPORT) {
             processFile(chatId, List.of(file), type);
@@ -126,14 +131,15 @@ public class BotServiceImpl implements BotService {
         }).start();
     }
     private void processFile(Long chatId, List<DownloadedFile> files, DocumentType type) {
-        String response = geminiService.sendRequest(files, type);
-        userService.requestAmountPlusPlus(chatId);
+        CountryCode preCountryCode = countryCodeExtractor.extract(chatId, files.get(0));
+        String response = geminiService.sendRequest(files, type,  preCountryCode);
         DocumentDto dto = documentService.mapToDocumentDto(response, type);
         if(!dto.isDocument())
             throw new UnsupportedDocumentException(chatId, ComRes.getInvalidDocumentResponse(type));
         XWPFDocument xwpfDocument = documentService.fillWordDocument(chatId, dto);
 
         sendFile(chatId, xwpfDocument, getFileName(chatId, dto.getPerson()));
+        userService.requestAmountPlusPlus(chatId);
     }
     private String getFileName(Long chatId, PersonDto dto) {
         String patronymic = dto.patronymic().isEmpty() ? "" : " " + dto.patronymic();
