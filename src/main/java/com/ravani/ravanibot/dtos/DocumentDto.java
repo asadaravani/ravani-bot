@@ -1,24 +1,43 @@
 package com.ravani.ravanibot.dtos;
 
+import com.fasterxml.jackson.annotation.JsonSetter;
+import com.fasterxml.jackson.annotation.Nulls;
 import lombok.Getter;
 
 @Getter
 public sealed abstract class DocumentDto permits PassportDto, DriverLicenseDto {
+
+    @JsonSetter(nulls = Nulls.AS_EMPTY)
     private final String country_code;
+
+    @JsonSetter(nulls = Nulls.AS_EMPTY)
     private final String number;
+
+    @JsonSetter(nulls = Nulls.AS_EMPTY)
     private final String issueDate;
+
+    @JsonSetter(nulls = Nulls.AS_EMPTY)
     private final String expiryDate;
+
+    @JsonSetter(nulls = Nulls.AS_EMPTY)
     private final String issueAuthority;
+
+    @JsonSetter(nulls = Nulls.AS_EMPTY)
     private final String place_of_issue;
+
+    @JsonSetter(nulls = Nulls.AS_EMPTY)
+    private final String issued_by;
+
     private final PersonDto person;
 
-    public DocumentDto(String country_code, String number, String issueDate, String expiryDate, String issueAuthority, String place_of_issue, PersonDto person) {
+    public DocumentDto(String country_code, String number, String issueDate, String expiryDate, String issueAuthority, String place_of_issue, String issued_by, PersonDto person) {
         this.country_code = validateField(country_code);
         this.number = validateField(number);
         this.issueDate = validateField(issueDate);
         this.expiryDate = validateField(expiryDate);
         this.issueAuthority = validateField(issueAuthority);
         this.place_of_issue = validateField(place_of_issue);
+        this.issued_by = validateField(issued_by);
         this.person = person;
     }
 
@@ -58,6 +77,7 @@ public sealed abstract class DocumentDto permits PassportDto, DriverLicenseDto {
                 ", expiryDate='" + expiryDate + '\'' +
                 ", issueAuthority='" + issueAuthority + '\'' +
                 ", place_of_issue='" + place_of_issue + '\'' +
+                ", issued_by='" + issued_by + '\'' +
                 ", person=" + person +
                 '}';
     }

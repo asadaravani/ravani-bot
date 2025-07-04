@@ -6,11 +6,10 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
 @Component
-@ConfigurationProperties(prefix = "gemini")
+@ConfigurationProperties(prefix = "tesseract")
 @Getter
 @Setter
-public class GeminiConfig {
-    private String model;
-    private String token;
+public class TesseractConfig {
 
+    private String dataPath;
 }

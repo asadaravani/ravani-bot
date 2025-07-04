@@ -2,7 +2,7 @@ package com.ravani.ravanibot.service.impl;
 
 import com.ravani.ravanibot.constants.SpecialUserDetails;
 import com.ravani.ravanibot.dtos.PassportDto;
-import com.ravani.ravanibot.enums.Countries;
+import com.ravani.ravanibot.enums.CountryCode;
 import com.ravani.ravanibot.exceptions.UnsupportedDocumentException;
 import org.apache.poi.xwpf.usermodel.XWPFDocument;
 import java.time.LocalDate;
@@ -15,7 +15,8 @@ import static com.ravani.ravanibot.service.impl.DocumentServiceImpl.*;
 
 public class PassportDocGenerator {
 
-    static XWPFDocument execute(Countries country, PassportDto passportDto, Long chatId) {
+    static XWPFDocument execute(CountryCode country, PassportDto passportDto, Long chatId) {
+        System.err.println(passportDto.toString());
         Map<String, String> fields;
         XWPFDocument document;
         if (Objects.equals(chatId, SpecialUserDetails.GULMIRA_CHAT_ID)) {
@@ -56,7 +57,7 @@ public class PassportDocGenerator {
         replaceField(document.getParagraphs(), fields);
         return document;
     }
-    private static XWPFDocument gulmiraExecute(Countries country, PassportDto passportDto, Long chatId) {
+    private static XWPFDocument gulmiraExecute(CountryCode country, PassportDto passportDto, Long chatId) {
         Map<String, String> fields;
         XWPFDocument document;
         switch (country) {
@@ -78,7 +79,7 @@ public class PassportDocGenerator {
                 fields = mapFieldsKgzOld(passportDto);
             }
             case TUR -> {
-                String gen = detectTurkishPassGen(passportDto.getIssueDate());
+                String gen = detectTurkishPassGen(passportDto.getIssueDate(), passportDto.getIssued_by());
                 document = loadFile(chatId, "gulmira/tur_passport_" +  gen + ".docx");
                 fields = mapFieldsTur(passportDto);
             }
@@ -127,6 +128,7 @@ public class PassportDocGenerator {
         values.put("Поля4", generateFullMonthFormat(dto.getPerson().birth_date()));
         values.put("Поля7", generateFullMonthFormat(dto.getIssueDate()));
         values.put("Поля8", generateFullMonthFormat(dto.getExpiryDate()));
+        values.put("Поля9", dto.getIssued_by());
         return values;
     }
     private static Map<String, String> mapFieldsKgzNew(PassportDto dto) {
@@ -194,6 +196,8 @@ public class PassportDocGenerator {
             authority = authority.replace("ХШБ", "ПРС");
         if (authority.equals("MINISTRY OF INTERNAL AFFAIRS"))
             authority = "МИНИСТЕРСТВО ВНУТРЕННИХ ДЕЛ";
+        if (authority.equals("STATE PERSONALIZATION CENTRE"))
+            return "ГОСУДАРСТВЕННЫЙ ЦЕНТР ПЕРСОНАЛИЗАЦИИ";
         if (authority.contains("SMST"))
             authority = authority.replace("SMST", "ГОСУДАРСТВЕННАЯ МИГРАЦИОННАЯ СЛУЖБА ТУРКМЕНИСТАНА");
         return authority;
@@ -229,19 +233,20 @@ public class PassportDocGenerator {
             return "УЗБЕКИСТАН";
         if (birthPlace.contains("TJK") || birthPlace.contains("ТЖК"))
             return "ТАДЖИКИСТАН";
-        if (birthPlace.contains("STATE PERSONALIZATION CENTRE"))
-            return "ГОСУДАРСТВЕННЫЙ ЦЕНТР ПЕРСОНАЛИЗАЦИИ";
         if (birthPlace.contains("RUS") || birthPlace.contains("РУС"))
             return "РОССИЯ";
         return birthPlace;
     }
-    private static String detectTurkishPassGen(String issueDate) {
+    private static String detectTurkishPassGen(String issueDate, String issued_by) {
         String firstGen = "1st", secondGen = "2nd",  thirdGen = "3rd";
+        boolean isRussianEmbassy = issued_by.contains("МОСКВА");
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy");
         LocalDate date = LocalDate.parse(issueDate, formatter);
         if (date.isBefore(LocalDate.of(2018, 4, 1))) {
             return firstGen;
         } else if (date.isBefore(LocalDate.of(2022, 8, 25))) {
+            return secondGen;
+        } else if (isRussianEmbassy) {
             return secondGen;
         } else {
             return thirdGen;

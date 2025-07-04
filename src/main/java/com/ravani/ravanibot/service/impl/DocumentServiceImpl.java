@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ravani.ravanibot.dtos.DocumentDto;
 import com.ravani.ravanibot.dtos.DriverLicenseDto;
 import com.ravani.ravanibot.dtos.PassportDto;
-import com.ravani.ravanibot.enums.Countries;
+import com.ravani.ravanibot.enums.CountryCode;
 import com.ravani.ravanibot.enums.DocumentType;
 import com.ravani.ravanibot.exceptions.FileDownloadingErrorException;
 import com.ravani.ravanibot.exceptions.UnsupportedDocumentException;
@@ -21,7 +21,7 @@ public class DocumentServiceImpl implements DocumentService {
 
     @Override
     public XWPFDocument fillWordDocument(Long chatId, DocumentDto dto) {
-        Countries country = detectCountry(chatId, dto.getCountry_code());
+        CountryCode country = detectCountry(chatId, dto.getCountry_code());
         return dto instanceof PassportDto ? PassportDocGenerator.execute(country, (PassportDto) dto, chatId)
                 : DriverLicenseDocGenerator.execute(country, (DriverLicenseDto) dto, chatId);
     }
@@ -74,18 +74,18 @@ public class DocumentServiceImpl implements DocumentService {
             });
         });
     }
-    private Countries detectCountry(Long chatId, String country_code) {
-        Countries country;
+    private CountryCode detectCountry(Long chatId, String country_code) {
+        CountryCode country;
         switch (country_code) {
-            case "KGZ" -> country = Countries.KGZ;
-            case "UZB" -> country = Countries.UZB;
-            case "TJK" -> country = Countries.TJK;
-            case "KAZ" -> country = Countries.KAZ;
-            case "TKM" -> country = Countries.TKM;
-            case "AZE" -> country = Countries.AZE;
-            case "ARM" -> country = Countries.ARM;
-            case "TUR" -> country = Countries.TUR;
-            case "IND" -> country = Countries.IND;
+            case "KGZ" -> country = CountryCode.KGZ;
+            case "UZB" -> country = CountryCode.UZB;
+            case "TJK" -> country = CountryCode.TJK;
+            case "KAZ" -> country = CountryCode.KAZ;
+            case "TKM" -> country = CountryCode.TKM;
+            case "AZE" -> country = CountryCode.AZE;
+            case "ARM" -> country = CountryCode.ARM;
+            case "TUR" -> country = CountryCode.TUR;
+            case "IND" -> country = CountryCode.IND;
             default ->
                     throw new UnsupportedDocumentException(chatId, "❌Паспорт " + country_code + " не поддерживается");
         }

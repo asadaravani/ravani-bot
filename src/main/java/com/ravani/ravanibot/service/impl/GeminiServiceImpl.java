@@ -3,7 +3,9 @@ package com.ravani.ravanibot.service.impl;
 import com.google.genai.Client;
 import com.google.genai.types.*;
 import com.ravani.ravanibot.config.GeminiConfig;
+import com.ravani.ravanibot.constants.GeminiRequests;
 import com.ravani.ravanibot.dtos.DownloadedFile;
+import com.ravani.ravanibot.enums.CountryCode;
 import com.ravani.ravanibot.enums.DocumentType;
 import com.ravani.ravanibot.service.GeminiService;
 import jakarta.annotation.PostConstruct;
@@ -26,8 +28,8 @@ public class GeminiServiceImpl implements GeminiService {
     }
 
     @Override
-    public String sendRequest(List<DownloadedFile> files, DocumentType type) {
-        Content content = getContent(files, type);
+    public String sendRequest(List<DownloadedFile> files, DocumentType type, CountryCode countryCode) {
+        Content content = getContent(files, type, countryCode);
         GenerateContentConfig config = getContentConfig();
         GenerateContentResponse response = client.models.generateContent(
                 geminiConfig.getModel(), content, config
@@ -41,10 +43,10 @@ public class GeminiServiceImpl implements GeminiService {
                 .build();
     }
     @SneakyThrows
-    private Content getContent(List<DownloadedFile> files, DocumentType documentType) {
+    private Content getContent(List<DownloadedFile> files, DocumentType documentType, CountryCode countryCode) {
         List<Part>  parts = new ArrayList<>();
         files.forEach(file -> parts.add(Part.fromBytes(file.bytes(),  file.contentType())));
-        parts.add(Part.fromText(geminiConfig.getRequestText(documentType)));
+        parts.add(Part.fromText(GeminiRequests.getRequestText(documentType, countryCode)));
         return Content.builder()
                 .parts(parts)
                 .build();

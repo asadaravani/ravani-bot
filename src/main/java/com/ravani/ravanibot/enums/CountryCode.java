@@ -1,6 +1,6 @@
 package com.ravani.ravanibot.enums;
 
-public enum Countries {
+public enum CountryCode {
     KGZ,
     UZB,
     TJK,
