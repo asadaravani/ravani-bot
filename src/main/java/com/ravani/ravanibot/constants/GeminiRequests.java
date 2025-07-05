@@ -51,6 +51,7 @@ Task:
 - Convert all dates to format: DD.MM.YYYY.
 - Gender will be Ж or М.
 - Translate Azerbaijani letters into Russian properly.
+- Return birthplace without its country code.
 
 Rules:
 - Output only a valid JSON object, matching the structure below.
@@ -78,7 +79,7 @@ JSON output format:
 }
 """;
     private static final String TJK_PASSPORT = """
-You are an expert in document analysis and sworn translation from Tajik into Russian.
+You are an expert in document analysis and sworn translation from Tajik and English into Russian.
 
 Task:
 - Extract all relevant data from the provided passport image or scan.
@@ -107,7 +108,7 @@ JSON output format:
     "name": "ДЖАВОХИР",
     "patronymic": "ОДИЛДЖОНОВИЧ",
     "birth_date": "31.06.2003",
-    "gender": "М",
+    "gender": "М"
   }
 }
 """;
