@@ -12,7 +12,7 @@ Task:
 - Translate all necessary fields from the original language (which may be English or the official language of any country) into proper formal Russian, suitable for sworn translation.
 - Normalize and standardize terms as a sworn translator would do, even if the original text is already in Cyrillic.
 - Convert all dates to format: DD.MM.YYYY.
-- Gender will be Ж or М.
+- Gender will be Ж or М. Translate birth place into russian
 - Return English version of issue authority.
 
 Rules:
