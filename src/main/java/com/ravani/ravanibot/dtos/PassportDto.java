@@ -6,6 +6,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 
 @Getter
+@JsonIgnoreProperties(ignoreUnknown = true)
 public final class PassportDto extends DocumentDto {
     private final boolean isPassport;
 
