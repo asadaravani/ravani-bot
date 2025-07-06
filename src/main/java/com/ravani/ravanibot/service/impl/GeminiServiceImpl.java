@@ -28,8 +28,8 @@ public class GeminiServiceImpl implements GeminiService {
     }
 
     @Override
-    public String sendRequest(List<DownloadedFile> files, DocumentType type, CountryCode countryCode) {
-        Content content = getContent(files, type, countryCode);
+    public String sendRequest(List<DownloadedFile> files, DocumentType type, CountryCode countryCode,  Long chatId) {
+        Content content = getContent(files, type, countryCode, chatId);
         GenerateContentConfig config = getContentConfig();
         GenerateContentResponse response = client.models.generateContent(
                 geminiConfig.getModel(), content, config
@@ -43,10 +43,10 @@ public class GeminiServiceImpl implements GeminiService {
                 .build();
     }
     @SneakyThrows
-    private Content getContent(List<DownloadedFile> files, DocumentType documentType, CountryCode countryCode) {
+    private Content getContent(List<DownloadedFile> files, DocumentType documentType, CountryCode countryCode,  Long chatId) {
         List<Part>  parts = new ArrayList<>();
         files.forEach(file -> parts.add(Part.fromBytes(file.bytes(),  file.contentType())));
-        parts.add(Part.fromText(GeminiRequests.getRequestText(documentType, countryCode)));
+        parts.add(Part.fromText(GeminiRequests.getRequestText(documentType, countryCode, chatId)));
         return Content.builder()
                 .parts(parts)
                 .build();

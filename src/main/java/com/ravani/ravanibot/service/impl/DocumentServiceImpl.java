@@ -51,6 +51,7 @@ public class DocumentServiceImpl implements DocumentService {
                     if (text != null) {
                         for (Map.Entry<String, String> entry : values.entrySet()) {
                             if (text.contains(entry.getKey())) {
+                                System.err.println(entry.getKey() + ": " + entry.getValue());
                                 run.setText(text.replace(entry.getKey(), entry.getValue()), 0);
                             }
                         }

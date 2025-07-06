@@ -7,5 +7,5 @@ import com.ravani.ravanibot.enums.DocumentType;
 import java.util.List;
 
 public interface GeminiService {
-    String sendRequest(List<DownloadedFile> files, DocumentType documentType, CountryCode countryCode);
+    String sendRequest(List<DownloadedFile> files, DocumentType documentType, CountryCode countryCode, Long chatId);
 }

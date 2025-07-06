@@ -5,7 +5,7 @@ import com.fasterxml.jackson.annotation.Nulls;
 import lombok.Getter;
 
 @Getter
-public sealed abstract class DocumentDto permits PassportDto, DriverLicenseDto {
+public sealed abstract class DocumentDto permits PassportDto, DriverLicenseDto{
 
     @JsonSetter(nulls = Nulls.AS_EMPTY)
     private final String country_code;
@@ -44,8 +44,11 @@ public sealed abstract class DocumentDto permits PassportDto, DriverLicenseDto {
     public PersonDto getPerson() {
         return new PersonDto.PersonDtoBuilder()
                 .surname(validateField(person.surname()))
+                .surname_in_eng(validateField(person.surname_in_eng()))
                 .name(validateField(person.name()))
+                .name_in_eng(validateField(person.name_in_eng()))
                 .patronymic(validateField(person.patronymic()))
+                .patronymic_in_eng(validateField(person.patronymic_in_eng()))
                 .birth_date(validateField(person.birth_date()))
                 .gender(validateField(person.gender()))
                 .birth_place(validateField(person.birth_place()))
