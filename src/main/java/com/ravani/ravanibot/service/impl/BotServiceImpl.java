@@ -144,7 +144,7 @@ public class BotServiceImpl implements BotService {
     private String getFileName(Long chatId, PersonDto dto) {
         String patronymic = dto.patronymic().isEmpty() ? "" : " " + dto.patronymic();
 
-        if(Objects.equals(chatId, SpecialUserDetails.GULMIRA_CHAT_ID))
+        if(Objects.equals(chatId, SpecialUserDetails.GULMIRA_CHAT_ID) ||  Objects.equals(chatId, SpecialUserDetails.ASHIM_CHAT_ID))
             return dto.surname() + " "  + dto.name() + patronymic + ".docx";
 
         return dto.surname() + ".docx";
