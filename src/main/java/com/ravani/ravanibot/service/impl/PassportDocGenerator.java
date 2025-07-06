@@ -185,7 +185,6 @@ public class PassportDocGenerator {
         return values;
     }
     private static Map<String, String> mapFieldsKgzNewAshim(PassportDto dto) {
-        System.err.println(dto.toString());
         String[] passportNumberAshim = generatePassNumAshim(dto.getNumber());
 
         Map<String, String> values = mapFieldsKgzNew(dto);
