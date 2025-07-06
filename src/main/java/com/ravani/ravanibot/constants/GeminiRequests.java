@@ -2,6 +2,7 @@ package com.ravani.ravanibot.constants;
 
 import com.ravani.ravanibot.enums.CountryCode;
 import com.ravani.ravanibot.enums.DocumentType;
+import java.util.Objects;
 
 public class GeminiRequests {
     private static final String undetectedCountry = """
@@ -42,6 +43,48 @@ JSON output format:
   }
 }
 """;
+    private static final String KGZ_PASSPORT_ASHIM = """
+You are an expert in document analysis and sworn translation.
+
+Task:
+- Extract all relevant data from the provided passport image or scan.
+- Translate all necessary fields from the original language (which may be English or the official language of any country) into proper formal Russian, suitable for sworn translation.
+- Normalize and standardize terms as a sworn translator would do, even if the original text is already in Cyrillic.
+- Convert all dates to format: DD.MM.YYYY.
+- Gender will be Ж or М. Translate birth place into russian
+- In fields surname_in_eng, name_in_eng, patronymic_in_eng return version of names.
+- The mrz_second_line field should contain the complete second line of the MRZ
+- Return English version of issue authority.
+
+Rules:
+- Output only a valid JSON object, matching the structure below.
+- Do NOT include any explanations, comments, or additional formatting.
+- All text must be translated into Russian, except numbers, document codes, and dates and issueAuthority.
+- If a field is missing or not found, set its value to null (not "...").
+
+JSON output format:
+{
+  "isPassport": true,
+  "country_code": "KGZ",
+  "number": "PE1234567",
+  "issueDate": "01.01.2020",
+  "expiryDate": "01.01.2030",
+  "issueAuthority": "MIA 213031",
+  "person": {
+    "surname": "СЕРГЕЕВ",
+    "surname_in_eng": "SERGEEV",
+    "name": "ВЛАДИСЛАВ",
+    "name_in_eng": "VLADISLAV",
+    "patronymic": "АЛЕКСАНДРОВИЧ",
+    "patronymic_in_eng": "ALEKSANDROVICH",
+    "birth_date": "31.06.2003",
+    "gender": "М",
+    "birth_place": "КЫРГЫЗСКАЯ РЕСПУБЛИКА",
+    "personal_number": "21004500200010"
+  }
+}
+""";
+
     private static final String AZE_PASSPORT = """
 You are an expert in document analysis and sworn translation from Azerbaijani into Russian.
 
@@ -219,8 +262,10 @@ JSON output format:
 
 
 
-    public static String getRequestText(DocumentType mode, CountryCode countryCode) {
+    public static String getRequestText(DocumentType mode, CountryCode countryCode,  Long chatId) {
         System.out.println(countryCode);
+        if (Objects.equals(chatId, SpecialUserDetails.ASHIM_CHAT_ID) && countryCode == CountryCode.KGZ)
+            return KGZ_PASSPORT_ASHIM;
         if (mode == DocumentType.PASSPORT) {
 
             if (countryCode == CountryCode.AZE)

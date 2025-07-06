@@ -8,10 +8,19 @@ import lombok.Builder;
 public record PersonDto(
         String surname,
 
+        @JsonSetter(nulls = Nulls.AS_EMPTY)
+        String surname_in_eng,
+
         String name,
 
         @JsonSetter(nulls = Nulls.AS_EMPTY)
+        String name_in_eng,
+
+        @JsonSetter(nulls = Nulls.AS_EMPTY)
         String patronymic,
+
+        @JsonSetter(nulls = Nulls.AS_EMPTY)
+        String patronymic_in_eng,
 
         String birth_date,
 

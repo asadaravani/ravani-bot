@@ -42,7 +42,7 @@ public class BotServiceImpl implements BotService {
     TelegramSender sender;
     FileDownloader downloader;
     DocumentService documentService;
-    Long ownerId = 735283091L;
+    Long ownerId = SpecialUserDetails.OWNER_CHAT_ID;
     Integer WAITING_TIME_MILLIS = 5000;
     UserService userService;
     Map<Long, List<DownloadedFile>> tempFiles = new ConcurrentHashMap<>();
@@ -132,7 +132,7 @@ public class BotServiceImpl implements BotService {
     }
     private void processFile(Long chatId, List<DownloadedFile> files, DocumentType type) {
         CountryCode preCountryCode = countryCodeExtractor.extract(chatId, files.get(0));
-        String response = geminiService.sendRequest(files, type,  preCountryCode);
+        String response = geminiService.sendRequest(files, type,  preCountryCode, chatId);
         DocumentDto dto = documentService.mapToDocumentDto(response, type);
         if(!dto.isDocument())
             throw new UnsupportedDocumentException(chatId, ComRes.getInvalidDocumentResponse(type));

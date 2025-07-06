@@ -2,8 +2,10 @@ package com.ravani.ravanibot.service.impl;
 
 import com.ravani.ravanibot.constants.SpecialUserDetails;
 import com.ravani.ravanibot.dtos.PassportDto;
+import com.ravani.ravanibot.dtos.PersonDto;
 import com.ravani.ravanibot.enums.CountryCode;
 import com.ravani.ravanibot.exceptions.UnsupportedDocumentException;
+import com.ravani.ravanibot.utils.DocumentMRZGenerator;
 import org.apache.poi.xwpf.usermodel.XWPFDocument;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -16,11 +18,17 @@ import static com.ravani.ravanibot.service.impl.DocumentServiceImpl.*;
 public class PassportDocGenerator {
 
     static XWPFDocument execute(CountryCode country, PassportDto passportDto, Long chatId) {
-        System.err.println(passportDto.toString());
         Map<String, String> fields;
         XWPFDocument document;
         if (Objects.equals(chatId, SpecialUserDetails.GULMIRA_CHAT_ID)) {
             return gulmiraExecute(country, passportDto, chatId);
+        }
+        else if (Objects.equals(chatId, SpecialUserDetails.ASHIM_CHAT_ID)) {
+            try {
+                return ashimExecute(country, passportDto, chatId);
+            }catch (UnsupportedDocumentException e) {
+                return gulmiraExecute(country, passportDto, chatId);
+            }
         }
         switch (country) {
             case UZB -> {
@@ -91,15 +99,37 @@ public class PassportDocGenerator {
                 document =  loadFile(chatId, "gulmira/kaz_passport.docx");
                 fields = mapFieldsKgzNew(passportDto);
             }
+            case KGZ -> {
+                document =  loadFile(chatId, "gulmira/kgz_passport_new.docx");
+                fields = mapFieldsKgzNewGul(passportDto);
+            }
             case TJK -> {
                 document = loadFile(chatId, "gulmira/tjk_passport.docx");
                 fields = mapFieldsTjk(passportDto);
             }
-            default -> throw new UnsupportedDocumentException(chatId, "❌Только паспорта UZB, IND, TUR, TKM, AZE, KAZ, TJK");
+            default -> throw new UnsupportedDocumentException(chatId, "❌Только паспорта UZB, IND, TUR, TKM, AZE, KAZ, TJK, KGZ");
         }
         replaceFieldInLayer(document, fields);
         return document;
     }
+
+    private static XWPFDocument ashimExecute(CountryCode country, PassportDto dto, Long chatId) {
+        Map<String, String> fields;
+        XWPFDocument document;
+        if (country != CountryCode.KGZ)
+            throw new UnsupportedDocumentException(chatId, "❌Пока что только KGZ ()");
+        if (dto.getNumber().startsWith("A")) {
+            document = loadFile(chatId, "ashim/kgz_passport_old.docx");
+            fields = mapFieldsKgzOldAshim(dto);
+        } else {
+            document = loadFile(chatId, "ashim/kgz_passport_new.docx");
+            fields = mapFieldsKgzNewAshim(dto);
+        }
+        replaceField(document.getParagraphs(), fields);
+        replaceFieldInLayer(document, fields);
+        return document;
+    }
+
 
     private static Map<String, String> mapFieldsTjk(PassportDto dto) {
         String name = dto.getPerson().patronymic().isEmpty() ? dto.getPerson().name()
@@ -135,6 +165,38 @@ public class PassportDocGenerator {
         Map<String, String> values = mapFieldsTjk(dto);
         values.put("Поля5", dto.getPerson().personal_number());
         values.put("Поля6", translateBirthPlace(dto.getPerson().birth_place()));
+        return values;
+    }
+    private static Map<String, String> mapFieldsKgzNewGul(PassportDto dto) {
+        Map<String, String> values = mapFieldsKgzNew(dto);
+        String authority = dto.getIssueAuthority().contains("SRS") ?
+                dto.getIssueAuthority().replace("SRS", "ГОСУДАРСТВЕННАЯ РЕГИСТРАЦИОННАЯ СЛУЖБА") : dto.getIssueAuthority();
+        values.put("Поля9", authority);
+        return values;
+    }
+    private static Map<String, String> mapFieldsKgzOldAshim(PassportDto dto) {
+        Map<String, String> values = mapFieldsKgzOld(dto);
+        values.put("Ген1", dto.getPerson().gender().startsWith("Ж") ? "ЖЕН" : "МУЖ");
+        values.put("Поля4", generateDateFormatWithSpace(dto.getPerson().birth_date()));
+        values.put("Поля7", generateDateFormatWithSpace(dto.getIssueDate()));
+        values.put("Поля8", generateDateFormatWithSpace(dto.getExpiryDate()));
+        values.put("СПАш3", DocumentMRZGenerator.buildMrzFirstLine(dto.getPerson().surname_in_eng(), dto.getPerson().name_in_eng(), dto.getPerson().patronymic_in_eng()));
+        values.put("СПАш4", generateMRZ2Ashim(DocumentMRZGenerator.generateMrzSecondLine(dto)));
+        return values;
+    }
+    private static Map<String, String> mapFieldsKgzNewAshim(PassportDto dto) {
+        System.err.println(dto.toString());
+        String[] passportNumberAshim = generatePassNumAshim(dto.getNumber());
+
+        Map<String, String> values = mapFieldsKgzNew(dto);
+        values.put("Поля4", generateDateFormatWithSpace(dto.getPerson().birth_date()));
+        values.put("Поля7", generateDateFormatWithSpace(dto.getIssueDate()));
+        values.put("Поля8", generateDateFormatWithSpace(dto.getExpiryDate()));
+        values.put("СПАш1", passportNumberAshim[0]);
+        values.put("СПАш2", passportNumberAshim[1]);
+        values.put("СПАш3", DocumentMRZGenerator.buildMrzFirstLine(dto.getPerson().surname_in_eng(), dto.getPerson().name_in_eng(), dto.getPerson().patronymic_in_eng()));
+        values.put("СПАш4", generateMRZ2Ashim(DocumentMRZGenerator.generateMrzSecondLine(dto)));
+        values.put("СПАш5", generateSpecField5Ashim(dto.getPerson()));
         return values;
     }
     private static Map<String, String> mapFieldsKgzOld(PassportDto dto) {
@@ -178,6 +240,36 @@ public class PassportDocGenerator {
         values.put("СПАр2", generateFullMonthFormat(dto.getExpiryDate()));
         return values;
     }
+
+    private static String[] generatePassNumAshim(String passportNumber) {
+        String[] result = {"", ""};
+        StringBuilder part1 = new StringBuilder(), part2 = new StringBuilder();
+        for (int i = 0; i < passportNumber.length(); i++) {
+            char ch = passportNumber.charAt(i);
+            if (i % 2 == 0) {
+                part1.append(ch).append(' ');
+            } else {
+                part2.append(ch).append(' ');
+            }
+        }
+        result[0] = part1.toString().trim();
+        result[1] = part2.toString().trim();
+
+        return result;
+    }
+    private static String generateMRZ2Ashim(String mrzSecondLine) {
+        StringBuilder mrz = new StringBuilder();
+        for (int i = 0; i < mrzSecondLine.length(); i++) {
+            if(i == 2 || i == 10 || i == 20)
+                mrz.append(" ");
+            mrz.append(mrzSecondLine.charAt(i));
+        }
+        return mrz.toString();
+    }
+    private static String generateSpecField5Ashim(PersonDto dto) {
+        String givenNames = dto.patronymic().isEmpty() ? dto.name() : dto.name() + " " + dto.patronymic();
+        return dto.personal_number() + "<<" + dto.surname() + " " +  givenNames + "<<" + generateDateFormatWithSpace(dto.birth_date());
+    }
     private static String stringX2Slash(String string) {
         return string + "/" + string;
     }
@@ -201,6 +293,9 @@ public class PassportDocGenerator {
         if (authority.contains("SMST"))
             authority = authority.replace("SMST", "ГОСУДАРСТВЕННАЯ МИГРАЦИОННАЯ СЛУЖБА ТУРКМЕНИСТАНА");
         return authority;
+    }
+    private static String generateDateFormatWithSpace(String date) {
+        return date.replace(".", " ");
     }
 
     private static String generateFullMonthFormat(String date) {
