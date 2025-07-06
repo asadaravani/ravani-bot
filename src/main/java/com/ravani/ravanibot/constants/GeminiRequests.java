@@ -263,7 +263,6 @@ JSON output format:
 
 
     public static String getRequestText(DocumentType mode, CountryCode countryCode,  Long chatId) {
-        System.out.println(countryCode);
         if (Objects.equals(chatId, SpecialUserDetails.ASHIM_CHAT_ID) && countryCode == CountryCode.KGZ)
             return KGZ_PASSPORT_ASHIM;
         if (mode == DocumentType.PASSPORT) {

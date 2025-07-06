@@ -132,6 +132,7 @@ public class BotServiceImpl implements BotService {
     }
     private void processFile(Long chatId, List<DownloadedFile> files, DocumentType type) {
         CountryCode preCountryCode = countryCodeExtractor.extract(chatId, files.get(0));
+        System.out.println(preCountryCode);
         String response = geminiService.sendRequest(files, type,  preCountryCode, chatId);
         DocumentDto dto = documentService.mapToDocumentDto(response, type);
         if(!dto.isDocument())
