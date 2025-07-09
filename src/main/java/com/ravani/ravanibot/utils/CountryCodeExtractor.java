@@ -4,6 +4,7 @@ import com.ravani.ravanibot.config.TesseractConfig;
 import com.ravani.ravanibot.dtos.DownloadedFile;
 import com.ravani.ravanibot.enums.CountryCode;
 import com.ravani.ravanibot.exceptions.AdminPanelException;
+import com.ravani.ravanibot.exceptions.FileDownloadingErrorException;
 import net.sourceforge.tess4j.Tesseract;
 import net.sourceforge.tess4j.TesseractException;
 import org.apache.pdfbox.Loader;
@@ -43,7 +44,7 @@ public class CountryCodeExtractor {
         tesseract.setDatapath(tesseractConfig.getDataPath());
         tesseract.setVariable("user_defined_dpi", "300");
         tesseract.setVariable("tessedit_char_whitelist", "ABCDEFGHIJKLMNOPQRSTUVWXYZ<");
-        tesseract.setOcrEngineMode(1); // LSTM only
+        tesseract.setOcrEngineMode(1);
         tesseract.setPageSegMode(6);
     }
     public CountryCode extract(Long chatId, DownloadedFile file) {
@@ -52,7 +53,10 @@ public class CountryCodeExtractor {
                 return extractFromPDF(file);
             }
             return extractFromImg(file);
-        } catch (IOException | TesseractException e) {
+        }catch (OutOfMemoryError e){
+                throw new FileDownloadingErrorException(chatId, "Файл слишком большой, вы можете сделать скриншот и отпарвить снова. Главное были видны все буквы, маленькие тоже");
+        }
+        catch (IOException | TesseractException e) {
             throw new AdminPanelException("Failed to extract country code. ChatId: " + chatId);
         }
     }
@@ -62,7 +66,7 @@ public class CountryCodeExtractor {
                 PDDocument doc = Loader.loadPDF(rar)
         ) {
             PDFRenderer renderer = new PDFRenderer(doc);
-            BufferedImage image = renderer.renderImageWithDPI(0, 600);
+            BufferedImage image = renderer.renderImageWithDPI(0, 300);
             BufferedImage grayImage = toGrayscale(image);
             BufferedImage contrasted = enhanceContrast(grayImage);
             String text = tesseract.doOCR(contrasted).toUpperCase();
