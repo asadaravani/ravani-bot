@@ -65,7 +65,7 @@ public class BotServiceImpl implements BotService {
         }
     }
 
-    private void sendFile(Long chatId, XWPFDocument document, String fileName) {
+    private void sendFile(Long chatId, XWPFDocument document, String fileName, String caption) {
         try(ByteArrayOutputStream out = new ByteArrayOutputStream()) {
             document.write(out);
             document.close();
@@ -74,11 +74,12 @@ public class BotServiceImpl implements BotService {
             SendDocument sendDocument = new SendDocument();
             sendDocument.setChatId(chatId.toString());
             sendDocument.setDocument(new InputFile(inputStream, fileName));
+            if (caption != null)
+                sendDocument.setCaption(caption);
             sender.execute(sendDocument);
         } catch (Exception e) {
             throw new FileDownloadingErrorException(chatId, "❌ Не удалось отправить файл. Повторите попытку или обратитесь к админу.");
         }
-
     }
     @Override
     public void sendMessage(Long chatId, String message){
@@ -132,22 +133,20 @@ public class BotServiceImpl implements BotService {
     }
     private void processFile(Long chatId, List<DownloadedFile> files, DocumentType type) {
         CountryCode preCountryCode = countryCodeExtractor.extract(chatId, files.get(0));
-        System.out.println(preCountryCode);
         String response = geminiService.sendRequest(files, type,  preCountryCode, chatId);
         DocumentDto dto = documentService.mapToDocumentDto(response, type);
         if(!dto.isDocument())
             throw new UnsupportedDocumentException(chatId, ComRes.getInvalidDocumentResponse(type));
         XWPFDocument xwpfDocument = documentService.fillWordDocument(chatId, dto);
-
-        sendFile(chatId, xwpfDocument, getFileName(chatId, dto.getPerson()));
+        String captionForWordFile = preCountryCode == null ? ComRes.BAD_QUALITY_FILE : null;
+        sendFile(chatId, xwpfDocument, getFileName(chatId, dto.getPerson()), captionForWordFile);
         userService.requestAmountPlusPlus(chatId);
     }
     private String getFileName(Long chatId, PersonDto dto) {
+        if(Objects.equals(chatId, SpecialUserDetails.BEMA_CHAT_ID))
+            return dto.surname() + ".docx";
+
         String patronymic = dto.patronymic().isEmpty() ? "" : " " + dto.patronymic();
-
-        if(Objects.equals(chatId, SpecialUserDetails.GULMIRA_CHAT_ID) ||  Objects.equals(chatId, SpecialUserDetails.ASHIM_CHAT_ID))
-            return dto.surname() + " "  + dto.name() + patronymic + ".docx";
-
-        return dto.surname() + ".docx";
+        return dto.surname() + " "  + dto.name() + patronymic + ".docx";
     }
 }

@@ -1,6 +1,7 @@
 package com.ravani.ravanibot.utils;
 
 import com.ravani.ravanibot.config.TesseractConfig;
+import com.ravani.ravanibot.constants.ComRes;
 import com.ravani.ravanibot.dtos.DownloadedFile;
 import com.ravani.ravanibot.enums.CountryCode;
 import com.ravani.ravanibot.exceptions.AdminPanelException;
@@ -48,25 +49,28 @@ public class CountryCodeExtractor {
         tesseract.setPageSegMode(6);
     }
     public CountryCode extract(Long chatId, DownloadedFile file) {
+        CountryCode countryCode;
         try {
-            if (file.contentType().equals("application/pdf")) {
-                return extractFromPDF(file);
-            }
-            return extractFromImg(file);
+            if (file.contentType().equals("application/pdf"))
+                countryCode =  extractFromPDF(file);
+            else
+                countryCode = extractFromImg(file);
         }catch (OutOfMemoryError e){
-                throw new FileDownloadingErrorException(chatId, "Файл слишком большой, вы можете сделать скриншот и отпарвить снова. Главное были видны все буквы, маленькие тоже");
+                throw new FileDownloadingErrorException(chatId, ComRes.TOO_LARGE_FILE);
         }
         catch (IOException | TesseractException e) {
             throw new AdminPanelException("Failed to extract country code. ChatId: " + chatId);
         }
+        return countryCode;
     }
     private CountryCode extractFromPDF(DownloadedFile file) throws IOException, TesseractException {
         try (
                 RandomAccessRead rar = new RandomAccessReadBuffer(file.bytes());
                 PDDocument doc = Loader.loadPDF(rar)
         ) {
+            int dpi = getDPI(file.bytes().length);
             PDFRenderer renderer = new PDFRenderer(doc);
-            BufferedImage image = renderer.renderImageWithDPI(0, 300);
+            BufferedImage image = renderer.renderImageWithDPI(0, dpi);
             BufferedImage grayImage = toGrayscale(image);
             BufferedImage contrasted = enhanceContrast(grayImage);
             String text = tesseract.doOCR(contrasted).toUpperCase();
@@ -128,15 +132,28 @@ public class CountryCodeExtractor {
             }
         }
         if (text.contains("PCAZE")) {
-            return CountryCode.valueOf("AZE");
+            return CountryCode.AZE;
         }
-        if (text.contains("P<TIK") ) {}
+        if (text.contains("P<TIK") ) {
+            return CountryCode.TJK;
+        }
         for (Map.Entry<String, CountryCode> entry : COUNTRY_NAME_TO_CODE.entrySet()) {
             if (text.contains(entry.getKey())) {
                 return entry.getValue();
             }
         }
         return null;
+    }
+    private int getDPI(int fileSizeBytes) {
+        int dpi;
+        if (fileSizeBytes < 100 * 1024) {
+            dpi = 600;
+        } else if (fileSizeBytes < 1024 * 1024) {
+            dpi = 300;
+        } else {
+            dpi = 150;
+        }
+        return dpi;
     }
 
 }

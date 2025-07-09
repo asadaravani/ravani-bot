@@ -1,8 +1,7 @@
 package com.ravani.ravanibot.constants;
 
 public class SpecialUserDetails {
-    public static String BEMA = "bema";
-    public static Long BEMA_ID = 6337978201L;
+    public static Long BEMA_CHAT_ID = 6337978201L;
 
     public static Long OWNER_CHAT_ID = 735283091L;
 
