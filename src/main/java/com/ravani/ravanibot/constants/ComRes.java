@@ -33,5 +33,5 @@ public class ComRes {
         return "😡 Это не " + documentType.toString() + INVALID_DOCUMENT;
     }
     public static String TOO_LARGE_FILE = "😭Файл слишком большой, вы можете сделать скриншот и отправить снова.\n Главное — чтобы были видны все буквы, даже маленькие🫰";
-    public static String BAD_QUALITY_FILE = "Качество 👎🏻.";
+    public static String BAD_QUALITY_FILE = "Качество 👎🏻— и результат соответствующий.";
 }

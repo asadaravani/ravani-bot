@@ -240,6 +240,7 @@ Rules:
 - Do NOT include any explanations, comments, or additional formatting.
 - All text must be translated into Russian, except numbers, document codes, and dates.
 - If a field is missing or not found, set its value to null (not "...").
+- Turkish personal number is 11 digit number, try to guess if you cannot detect it.
 
 JSON output format:
 {
@@ -255,7 +256,7 @@ JSON output format:
     "birth_date": "31.06.2003",
     "gender": "М",
     "birth_place": "ДОГАНХИСАР",
-    "personal_number": "21004500200010"
+    "personal_number": "12345678901"
   }
 }
 """;
