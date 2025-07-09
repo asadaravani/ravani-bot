@@ -138,7 +138,7 @@ public class BotServiceImpl implements BotService {
         if(!dto.isDocument())
             throw new UnsupportedDocumentException(chatId, ComRes.getInvalidDocumentResponse(type));
         XWPFDocument xwpfDocument = documentService.fillWordDocument(chatId, dto);
-        String captionForWordFile = preCountryCode == null ? ComRes.BAD_QUALITY_FILE : null;
+        String captionForWordFile = preCountryCode == null ? ComRes.BAD_QUALITY_FILE : preCountryCode.toString();
         sendFile(chatId, xwpfDocument, getFileName(chatId, dto.getPerson()), captionForWordFile);
         userService.requestAmountPlusPlus(chatId);
     }

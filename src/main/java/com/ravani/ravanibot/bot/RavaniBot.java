@@ -36,7 +36,6 @@ public class RavaniBot implements LongPollingBot {
             try{
                 service.handleMessage(update.getMessage());
             }catch (BaseException e){
-                e.printStackTrace();
                 globalExceptionHandler.handle(e);
             }catch (Exception e){
                 e.printStackTrace();

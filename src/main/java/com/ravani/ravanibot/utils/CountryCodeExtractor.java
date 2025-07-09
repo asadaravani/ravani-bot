@@ -145,9 +145,10 @@ public class CountryCodeExtractor {
         return null;
     }
     private int getDPI(int fileSizeBytes) {
+        System.err.println(fileSizeBytes);
         int dpi;
         if (fileSizeBytes < 100 * 1024) {
-            dpi = 600;
+            dpi = 900;
         } else if (fileSizeBytes < 1024 * 1024) {
             dpi = 300;
         } else {

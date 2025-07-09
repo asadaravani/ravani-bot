@@ -240,7 +240,7 @@ Rules:
 - Do NOT include any explanations, comments, or additional formatting.
 - All text must be translated into Russian, except numbers, document codes, and dates.
 - If a field is missing or not found, set its value to null (not "...").
-- Turkish personal number is 11 digit number, try to guess if you cannot detect it.
+- If the personal number (11 digits) is not readable elsewhere, extract it from the second MRZ line, characters 29–39.
 
 JSON output format:
 {
