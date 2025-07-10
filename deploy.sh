@@ -12,4 +12,4 @@ echo "Restarting the systemd service..."
 sudo systemctl daemon-reload
 sudo systemctl restart ravani-bot
 
-echo "✅ App deployed and restarted via systemd!"
+echo "✅app deployed and restarted via systemd✅"
