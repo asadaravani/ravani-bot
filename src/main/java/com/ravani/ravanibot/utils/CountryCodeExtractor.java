@@ -4,8 +4,7 @@ import com.ravani.ravanibot.config.TesseractConfig;
 import com.ravani.ravanibot.constants.ComRes;
 import com.ravani.ravanibot.dtos.DownloadedFile;
 import com.ravani.ravanibot.enums.CountryCode;
-import com.ravani.ravanibot.exceptions.AdminPanelException;
-import com.ravani.ravanibot.exceptions.FileDownloadingErrorException;
+import com.ravani.ravanibot.exceptions.BotException;
 import net.sourceforge.tess4j.Tesseract;
 import net.sourceforge.tess4j.TesseractException;
 import org.apache.pdfbox.Loader;
@@ -35,7 +34,8 @@ public class CountryCodeExtractor {
             Map.entry("IND", CountryCode.IND),
             Map.entry("TURKMEN", CountryCode.TKM),
             Map.entry("TURKIYE", CountryCode.TUR),
-            Map.entry("KAZAKHSTAN", CountryCode.KAZ)
+            Map.entry("KAZAKHSTAN", CountryCode.KAZ),
+            Map.entry("PHILIP", CountryCode.PHL)
     );
 
     public CountryCodeExtractor() {
@@ -48,7 +48,7 @@ public class CountryCodeExtractor {
         tesseract.setOcrEngineMode(1);
         tesseract.setPageSegMode(6);
     }
-    public CountryCode extract(Long chatId, DownloadedFile file) {
+    public CountryCode extract(DownloadedFile file) {
         CountryCode countryCode;
         try {
             if (file.contentType().equals("application/pdf"))
@@ -56,10 +56,10 @@ public class CountryCodeExtractor {
             else
                 countryCode = extractFromImg(file);
         }catch (OutOfMemoryError e){
-                throw new FileDownloadingErrorException(chatId, ComRes.TOO_LARGE_FILE);
+                throw new BotException( ComRes.TOO_LARGE_FILE);
         }
         catch (IOException | TesseractException e) {
-            throw new AdminPanelException("Failed to extract country code. ChatId: " + chatId);
+            throw new BotException("Failed to extract country code");
         }
         return countryCode;
     }
@@ -145,7 +145,6 @@ public class CountryCodeExtractor {
         return null;
     }
     private int getDPI(int fileSizeBytes) {
-        System.err.println(fileSizeBytes);
         int dpi;
         if (fileSizeBytes < 100 * 1024) {
             dpi = 900;

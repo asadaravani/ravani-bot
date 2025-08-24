@@ -8,9 +8,7 @@ import com.ravani.ravanibot.dtos.PersonDto;
 import com.ravani.ravanibot.entities.BotUser;
 import com.ravani.ravanibot.enums.CountryCode;
 import com.ravani.ravanibot.enums.DocumentType;
-import com.ravani.ravanibot.exceptions.AdminPanelException;
-import com.ravani.ravanibot.exceptions.FileDownloadingErrorException;
-import com.ravani.ravanibot.exceptions.UnsupportedDocumentException;
+import com.ravani.ravanibot.exceptions.BotException;
 import com.ravani.ravanibot.service.*;
 import com.ravani.ravanibot.utils.CountryCodeExtractor;
 import lombok.AccessLevel;
@@ -78,7 +76,7 @@ public class BotServiceImpl implements BotService {
                 sendDocument.setCaption(caption);
             sender.execute(sendDocument);
         } catch (Exception e) {
-            throw new FileDownloadingErrorException(chatId, "❌ Не удалось отправить файл. Повторите попытку или обратитесь к админу.");
+            throw new BotException("Не удалось отправить файл. Повторите попытку или обратитесь к админу.");
         }
     }
     @Override
@@ -89,7 +87,7 @@ public class BotServiceImpl implements BotService {
             sendMessage.setText(message);
             sender.execute(sendMessage);
         } catch (Exception e) {
-            throw new AdminPanelException(e.getMessage());
+            sendMessage(SpecialUserDetails.OWNER_CHAT_ID, e.getClass().getCanonicalName() + ": " + e.getMessage());
         }
     }
     @Override
@@ -132,11 +130,11 @@ public class BotServiceImpl implements BotService {
         }).start();
     }
     private void processFile(Long chatId, List<DownloadedFile> files, DocumentType type) {
-        CountryCode preCountryCode = countryCodeExtractor.extract(chatId, files.get(0));
+        CountryCode preCountryCode = countryCodeExtractor.extract(files.get(0));
         String response = geminiService.sendRequest(files, type,  preCountryCode, chatId);
         DocumentDto dto = documentService.mapToDocumentDto(response, type);
         if(!dto.isDocument())
-            throw new UnsupportedDocumentException(chatId, ComRes.getInvalidDocumentResponse(type));
+            throw new BotException(ComRes.getInvalidDocumentResponse(type));
         XWPFDocument xwpfDocument = documentService.fillWordDocument(chatId, dto);
         String captionForWordFile = preCountryCode == null ? ComRes.BAD_QUALITY_FILE : preCountryCode.toString();
         sendFile(chatId, xwpfDocument, getFileName(chatId, dto.getPerson()), captionForWordFile);
@@ -145,8 +143,10 @@ public class BotServiceImpl implements BotService {
     private String getFileName(Long chatId, PersonDto dto) {
         if(Objects.equals(chatId, SpecialUserDetails.BEMA_CHAT_ID))
             return dto.surname() + ".docx";
-
-        String patronymic = dto.patronymic().isEmpty() ? "" : " " + dto.patronymic();
-        return dto.surname() + " "  + dto.name() + patronymic + ".docx";
+        String name = dto.name().isEmpty() ? dto.given_names() : dto.name();
+        String surname = dto.surname().isEmpty() ? "" : dto.surname();
+        String patronymic = dto.patronymic().isEmpty() ? dto.middle_name() : dto.patronymic();
+        return surname + " " + name + " " + patronymic + ".docx";
     }
+
 }

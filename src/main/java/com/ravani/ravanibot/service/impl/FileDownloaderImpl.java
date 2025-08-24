@@ -2,8 +2,7 @@ package com.ravani.ravanibot.service.impl;
 
 import com.ravani.ravanibot.bot.RavaniBot;
 import com.ravani.ravanibot.dtos.DownloadedFile;
-import com.ravani.ravanibot.exceptions.FileDownloadingErrorException;
-import com.ravani.ravanibot.exceptions.NoPhotoOrDocumentException;
+import com.ravani.ravanibot.exceptions.BotException;
 import com.ravani.ravanibot.service.FileDownloader;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
@@ -18,7 +17,6 @@ import org.telegram.telegrambots.meta.bots.AbsSender;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.URLConnection;
-import java.util.Objects;
 
 @Component
 @RequiredArgsConstructor
@@ -39,7 +37,7 @@ public class FileDownloaderImpl implements FileDownloader {
                     byte[].class
             );
             byte[] bytes = response.getBody();
-            if (bytes == null) throw new FileDownloadingErrorException(message.getChatId(), "❌Downloaded bytes are null");
+            if (bytes == null) throw new BotException("Downloaded bytes are null");
 
             String contentType = URLConnection.guessContentTypeFromStream(new ByteArrayInputStream(bytes));
             if (contentType == null || contentType.equals("application/octet-stream"))
@@ -47,7 +45,7 @@ public class FileDownloaderImpl implements FileDownloader {
 
             return DownloadedFile.builder().bytes(bytes).contentType(contentType).build();
         } catch (IOException e) {
-            throw new FileDownloadingErrorException(message.getChatId(), "❌Could not download the file: IOException");
+            throw new BotException("Could not download the file: IOException");
         }
     }
     private String getFieldId(Message message) {
@@ -57,7 +55,7 @@ public class FileDownloaderImpl implements FileDownloader {
         } else if (message.hasDocument()) {
             fieldId = message.getDocument().getFileId();
         }else {
-            throw new NoPhotoOrDocumentException(message.getChatId(), "Message has no file/document");
+            throw new BotException("Message has no file/document");
         }
         return fieldId;
     }
@@ -69,7 +67,7 @@ public class FileDownloaderImpl implements FileDownloader {
         String filePath = file.getFilePath();
 
         if (filePath == null || filePath.isBlank()) {
-            throw new FileDownloadingErrorException(message.getChatId(), "❌FilePath is null or empty");
+            throw new BotException("FilePath is null or empty");
         }
         String downloadUrl = "https://api.telegram.org/file/bot" + ravaniBot.getBotToken();
         if (!filePath.startsWith("/")) {
@@ -84,8 +82,8 @@ public class FileDownloaderImpl implements FileDownloader {
             if (fileName.endsWith(".pdf")) return "application/pdf";
             else if (fileName.endsWith(".jpg") || fileName.endsWith(".jpeg")) return "image/jpeg";
             else if (fileName.endsWith(".png")) return "image/png";
-            else throw new FileDownloadingErrorException(message.getChatId(), "❌ Unsupported file type: " + fileName);
+            else throw new BotException("Unsupported file type: " + fileName);
         }
-        throw new FileDownloadingErrorException(message.getChatId(), "❌ Cannot detect content type.");
+        throw new BotException("Cannot detect content type.");
     }
 }

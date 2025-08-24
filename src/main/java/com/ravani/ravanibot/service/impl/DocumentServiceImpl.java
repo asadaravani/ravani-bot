@@ -1,13 +1,13 @@
 package com.ravani.ravanibot.service.impl;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ravani.ravanibot.dtos.DocumentDto;
 import com.ravani.ravanibot.dtos.DriverLicenseDto;
 import com.ravani.ravanibot.dtos.PassportDto;
 import com.ravani.ravanibot.enums.CountryCode;
 import com.ravani.ravanibot.enums.DocumentType;
-import com.ravani.ravanibot.exceptions.FileDownloadingErrorException;
-import com.ravani.ravanibot.exceptions.UnsupportedDocumentException;
+import com.ravani.ravanibot.exceptions.BotException;
 import com.ravani.ravanibot.service.DocumentService;
 import lombok.SneakyThrows;
 import org.apache.poi.xwpf.usermodel.*;
@@ -21,7 +21,7 @@ public class DocumentServiceImpl implements DocumentService {
 
     @Override
     public XWPFDocument fillWordDocument(Long chatId, DocumentDto dto) {
-        CountryCode country = detectCountry(chatId, dto.getCountry_code());
+        CountryCode country = detectCountry(dto.getCountry_code());
         return dto instanceof PassportDto ? PassportDocGenerator.execute(country, (PassportDto) dto, chatId)
                 : DriverLicenseDocGenerator.execute(country, (DriverLicenseDto) dto, chatId);
     }
@@ -30,18 +30,27 @@ public class DocumentServiceImpl implements DocumentService {
     @Override
     public DocumentDto mapToDocumentDto(String response, DocumentType type) {
         ObjectMapper mapper = new ObjectMapper();
-        if (type == DocumentType.PASSPORT)
-            return mapper.readValue(response, PassportDto.class);
+        if (type == DocumentType.PASSPORT){
+            try {
+                return mapper.readValue(response, PassportDto.class);
+            }catch (Exception e){
+                List<PassportDto> documents = mapper.readValue(response, new TypeReference<>() {});
+                return documents.stream()
+                        .filter(DocumentDto::isDocument)
+                        .findFirst()
+                        .orElse(documents.get(0));
+            }
+        }
         return mapper.readValue(response, DriverLicenseDto.class);
     }
 
-    static XWPFDocument loadFile(Long chatId, String filePath) {
+    static XWPFDocument loadFile(String filePath) {
         try (InputStream templateStream = DocumentServiceImpl.class.getClassLoader().getResourceAsStream(filePath)){
             if (templateStream == null)
-                throw new FileDownloadingErrorException(chatId, "❌File from 📁resources is null" );
+                throw new BotException( "❌File from 📁resources is null" );
             return new XWPFDocument(templateStream);
         }catch (Exception e){
-            throw new FileDownloadingErrorException(chatId, "❌Cannot load file from 📁resources: " + filePath);
+            throw new BotException("❌Cannot load file from 📁resources: " + filePath);
         }
     }
     static void replaceField(List<XWPFParagraph> paragraphs, Map<String, String> values) {
@@ -74,7 +83,7 @@ public class DocumentServiceImpl implements DocumentService {
             });
         });
     }
-    private CountryCode detectCountry(Long chatId, String country_code) {
+    private CountryCode detectCountry(String country_code) {
         CountryCode country;
         switch (country_code) {
             case "KGZ" -> country = CountryCode.KGZ;
@@ -86,8 +95,9 @@ public class DocumentServiceImpl implements DocumentService {
             case "ARM" -> country = CountryCode.ARM;
             case "TUR" -> country = CountryCode.TUR;
             case "IND" -> country = CountryCode.IND;
+            case "PHL" -> country = CountryCode.PHL;
             default ->
-                    throw new UnsupportedDocumentException(chatId, "❌Паспорт " + country_code + " не поддерживается");
+                    throw new BotException("❌Паспорт " + country_code + " не поддерживается");
         }
         return country;
     }

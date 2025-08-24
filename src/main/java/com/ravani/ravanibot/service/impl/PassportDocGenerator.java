@@ -4,7 +4,7 @@ import com.ravani.ravanibot.constants.SpecialUserDetails;
 import com.ravani.ravanibot.dtos.PassportDto;
 import com.ravani.ravanibot.dtos.PersonDto;
 import com.ravani.ravanibot.enums.CountryCode;
-import com.ravani.ravanibot.exceptions.UnsupportedDocumentException;
+import com.ravani.ravanibot.exceptions.BotException;
 import com.ravani.ravanibot.utils.DocumentMRZGenerator;
 import org.apache.poi.xwpf.usermodel.XWPFDocument;
 import java.time.LocalDate;
@@ -21,108 +21,113 @@ public class PassportDocGenerator {
         Map<String, String> fields;
         XWPFDocument document;
         if (Objects.equals(chatId, SpecialUserDetails.GULMIRA_CHAT_ID)) {
-            return gulmiraExecute(country, passportDto, chatId);
+            return gulmiraExecute(country, passportDto);
         }
         else if (Objects.equals(chatId, SpecialUserDetails.ASHIM_CHAT_ID)) {
             try {
-                return ashimExecute(country, passportDto, chatId);
-            }catch (UnsupportedDocumentException e) {
-                return gulmiraExecute(country, passportDto, chatId);
+                return ashimExecute(country, passportDto);
+            }catch (BotException e) {
+                return gulmiraExecute(country, passportDto);
             }
         }
         switch (country) {
             case UZB -> {
-                document = loadFile(chatId, "bema/uzb_passport.docx");
+                document = loadFile("bema/uzb_passport.docx");
                 fields = mapFieldsUzbNew(passportDto);
                 replaceFieldInLayer(document, fields);
                 return document;
             }
             case ARM -> {
-                document = loadFile(chatId, "bema/arm_passport.docx");
+                document = loadFile("bema/arm_passport.docx");
                 fields = mapFieldsArm(passportDto);
                 replaceFieldInLayer(document, fields);
                 return document;
             }
             case KGZ -> {
                 if (passportDto.getNumber().contains("AC")) {
-                    document = loadFile(chatId, "bema/kgz_passport_old.docx");
+                    document = loadFile("bema/kgz_passport_old.docx");
                     fields = mapFieldsKgzOld(passportDto);
                     break;
                 }
-                document = loadFile(chatId, "bema/kgz_passport_new.docx");
+                document = loadFile("bema/kgz_passport_new.docx");
                 fields = mapFieldsKgzNew(passportDto);
             }
             case TJK -> {
-                document = loadFile(chatId, "bema/tjk_passport.docx");
+                document = loadFile("bema/tjk_passport.docx");
                 fields = mapFieldsTjk(passportDto);
             }
             case AZE ->  {
-                document = loadFile(chatId, "bema/aze_passport.docx");
+                document = loadFile("bema/aze_passport.docx");
                 fields = mapFieldsAze(passportDto);
             }
-            default -> throw new UnsupportedDocumentException(chatId, "❌Только паспорта UZB, ARM, KGZ, TJK, AZE");
+            default -> throw new BotException("Только паспорта UZB, ARM, KGZ, TJK, AZE");
         }
         replaceField(document.getParagraphs(), fields);
         return document;
     }
-    private static XWPFDocument gulmiraExecute(CountryCode country, PassportDto passportDto, Long chatId) {
+    private static XWPFDocument gulmiraExecute(CountryCode country, PassportDto passportDto) {
         Map<String, String> fields;
         XWPFDocument document;
         switch (country) {
             case UZB -> {
                 if (passportDto.getNumber().startsWith("A")) {
-                    document = loadFile(chatId, "gulmira/uzb_passport_old.docx");
+                    document = loadFile("gulmira/uzb_passport_old.docx");
                     fields = mapFieldsUzbOld(passportDto);
                     break;
                 }
-                document = loadFile(chatId,"gulmira/uzb_passport_new.docx");
+                document = loadFile("gulmira/uzb_passport_new.docx");
                 fields = mapFieldsUzbNew(passportDto);
             }
             case IND -> {
-                document = loadFile(chatId, "gulmira/ind_passport.docx");
+                document = loadFile("gulmira/ind_passport.docx");
                 fields = mapFieldsInd(passportDto);
             }
             case TKM -> {
-                document = loadFile(chatId, "gulmira/tkm_passport.docx");
+                document = loadFile("gulmira/tkm_passport.docx");
                 fields = mapFieldsKgzOld(passportDto);
             }
             case TUR -> {
                 String gen = detectTurkishPassGen(passportDto.getIssueDate(), passportDto.getIssued_by());
-                document = loadFile(chatId, "gulmira/tur_passport_" +  gen + ".docx");
+                document = loadFile("gulmira/tur_passport_" +  gen + ".docx");
                 fields = mapFieldsTur(passportDto);
             }
             case AZE ->  {
-                document = loadFile(chatId, "gulmira/aze_passport.docx");
+                document = loadFile("gulmira/aze_passport.docx");
                 fields = mapFieldsAzeGul(passportDto);
             }
             case KAZ -> {
-                document =  loadFile(chatId, "gulmira/kaz_passport.docx");
+                document =  loadFile("gulmira/kaz_passport.docx");
                 fields = mapFieldsKgzNew(passportDto);
             }
             case KGZ -> {
-                document =  loadFile(chatId, "gulmira/kgz_passport_new.docx");
+                document =  loadFile("gulmira/kgz_passport_new.docx");
                 fields = mapFieldsKgzNewGul(passportDto);
             }
             case TJK -> {
-                document = loadFile(chatId, "gulmira/tjk_passport.docx");
+                document = loadFile("gulmira/tjk_passport.docx");
                 fields = mapFieldsTjk(passportDto);
             }
-            default -> throw new UnsupportedDocumentException(chatId, "❌Только паспорта UZB, IND, TUR, TKM, AZE, KAZ, TJK, KGZ");
+            case PHL -> {
+                document = loadFile("gulmira/phl_passport.docx");
+                fields = mapFieldsPhl(passportDto);
+            }
+            default -> throw new BotException("Только паспорта UZB, IND, TUR, TKM, AZE, KAZ, TJK, KGZ, PHL");
         }
         replaceFieldInLayer(document, fields);
+        System.out.println(fields);
         return document;
     }
 
-    private static XWPFDocument ashimExecute(CountryCode country, PassportDto dto, Long chatId) {
+    private static XWPFDocument ashimExecute(CountryCode country, PassportDto dto) {
         Map<String, String> fields;
         XWPFDocument document;
         if (country != CountryCode.KGZ)
-            throw new UnsupportedDocumentException(chatId, "❌Пока что только KGZ ()");
+            throw new BotException("Пока что только KGZ");
         if (dto.getNumber().startsWith("A")) {
-            document = loadFile(chatId, "ashim/kgz_passport_old.docx");
+            document = loadFile("ashim/kgz_passport_old.docx");
             fields = mapFieldsKgzOldAshim(dto);
         } else {
-            document = loadFile(chatId, "ashim/kgz_passport_new.docx");
+            document = loadFile("ashim/kgz_passport_new.docx");
             fields = mapFieldsKgzNewAshim(dto);
         }
         replaceField(document.getParagraphs(), fields);
@@ -159,6 +164,13 @@ public class PassportDocGenerator {
         values.put("Поля7", generateFullMonthFormat(dto.getIssueDate()));
         values.put("Поля8", generateFullMonthFormat(dto.getExpiryDate()));
         values.put("Поля9", dto.getIssued_by());
+        return values;
+    }
+    private static Map<String, String> mapFieldsPhl(PassportDto dto) {
+        Map<String, String> values = mapFieldsTur(dto);
+        values.put("Поля2", dto.getPerson().given_names());
+        values.put("СПФип0", dto.getPerson().middle_name());
+        values.put("Поля9", dto.getIssueAuthority());
         return values;
     }
     private static Map<String, String> mapFieldsKgzNew(PassportDto dto) {

@@ -2,7 +2,7 @@ package com.ravani.ravanibot.service.impl;
 
 import com.ravani.ravanibot.constants.ComRes;
 import com.ravani.ravanibot.entities.BotUser;
-import com.ravani.ravanibot.exceptions.AdminPanelException;
+import com.ravani.ravanibot.exceptions.BotException;
 import com.ravani.ravanibot.service.BotService;
 import com.ravani.ravanibot.service.CommandService;
 import com.ravani.ravanibot.service.UserService;
@@ -56,7 +56,7 @@ public class CommandServiceImpl implements CommandService {
     }
     private String handleRemoveCommand(String[] words){
         if (words.length != 2){
-            throw new AdminPanelException(ComRes.INVALID_COMMAND);
+            throw new BotException(ComRes.INVALID_COMMAND);
         }
         BotUser user = userService.getUserByName(words[1]);
         userService.deleteUser(user.getChatId());
@@ -65,7 +65,7 @@ public class CommandServiceImpl implements CommandService {
 
     private String handleInfoCommand(String[] words){
         if (words.length > 2){
-            throw new AdminPanelException(ComRes.INVALID_COMMAND);
+            throw new BotException(ComRes.INVALID_COMMAND);
         }
         if (words.length == 2){
             BotUser user = userService.getUserByName(words[1]);
