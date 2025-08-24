@@ -170,6 +170,9 @@ public class PassportDocGenerator {
         Map<String, String> values = mapFieldsTur(dto);
         values.put("Поля2", dto.getPerson().given_names());
         values.put("СПФип0", dto.getPerson().middle_name());
+        values.put("Поля4", capitalizeFullMonthFormat(generateFullMonthFormat(dto.getPerson().birth_date())));
+        values.put("Поля7", capitalizeFullMonthFormat(generateFullMonthFormat(dto.getIssueDate())));
+        values.put("Поля8", capitalizeFullMonthFormat(generateFullMonthFormat(dto.getExpiryDate())));
         values.put("Поля9", dto.getIssueAuthority());
         return values;
     }
@@ -327,6 +330,9 @@ public class PassportDocGenerator {
             case "12" -> month = "ДЕКАБРЯ";
         }
         return arr[0] + " " + month + " "  + arr[2];
+    }
+    private static String capitalizeFullMonthFormat(String name) {
+        return name.substring(0, 4) + name.substring(4).toLowerCase();
     }
     private static String capitalizeFirstLetter(String name) {
         return name.substring(0, 1).toUpperCase() + name.substring(1).toLowerCase();
