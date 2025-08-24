@@ -2,6 +2,8 @@ package com.ravani.ravanibot.constants;
 
 import com.ravani.ravanibot.enums.CountryCode;
 import com.ravani.ravanibot.enums.DocumentType;
+import com.ravani.ravanibot.exceptions.BotException;
+
 import java.util.Objects;
 
 public class GeminiRequests {
@@ -43,6 +45,42 @@ JSON output format:
   }
 }
 """;
+    private static final String PHL_PASSPORT = """
+You are an expert in document analysis and sworn translation.
+
+Task:
+- Extract all relevant data from the provided passport image or scan.
+- Translate all fields into proper formal Russian, suitable for sworn translation.
+- Convert all dates to format: DD.MM.YYYY.
+- Gender will be Ж or М.
+- Translate issue authority properly. "DFA" translates as ДЕПАРТАМЕНТ ИНОСТРАННЫХ ДЕЛ".
+- Do not leave any field without translation!
+
+Rules:
+- Output only a valid JSON object, matching the structure below.
+- Do NOT include any explanations, comments, or additional formatting.
+- All text must be translated into Russian, except numbers, document codes, and dates.
+- If a field is missing or not found, set its value to null (not "...").
+
+JSON output format:
+{
+  "isPassport": true,
+  "country_code": "PHL",
+  "number": "P1234567A",
+  "issueDate": "01.01.2020",
+  "expiryDate": "01.01.2030",
+  "issueAuthority": "ДЕПАРТАМЕНТ ИНОСТРАННЫХ ДЕЛ МАНИЛА",
+  "person": {
+    "surname": "ДЕЛА КРУЗ",
+    "given_names": "МАРИА",
+    "middle_name": "САНТОС",
+    "birth_date": "31.06.2003",
+    "gender": "Ж",
+    "birth_place": "МАНИЛА",
+  }
+}
+""";
+
     private static final String KGZ_PASSPORT_ASHIM = """
 You are an expert in document analysis and sworn translation.
 
@@ -200,6 +238,7 @@ Task:
 - Translate all necessary fields from English into proper formal Russian, suitable for sworn translation.
 - Convert all dates to format: DD.MM.YYYY.
 - Gender will be Ж or М.
+- Do not leave any field without translation.
 
 Rules:
 - Output only a valid JSON object, matching the structure below.
@@ -264,22 +303,24 @@ JSON output format:
 
 
     public static String getRequestText(DocumentType mode, CountryCode countryCode,  Long chatId) {
+        if (countryCode == null) {
+            return undetectedCountry;
+        }
         if (Objects.equals(chatId, SpecialUserDetails.ASHIM_CHAT_ID) && countryCode == CountryCode.KGZ)
             return KGZ_PASSPORT_ASHIM;
-        if (mode == DocumentType.PASSPORT) {
-
-            if (countryCode == CountryCode.AZE)
-                return AZE_PASSPORT;
-            else if (countryCode == CountryCode.TJK)
-                return TJK_PASSPORT;
-            else if (countryCode == CountryCode.IND)
-                return  IND_PASSPORT;
-            else if (countryCode == CountryCode.TUR)
-                return TUR_PASSPORT;
-            else if (countryCode == CountryCode.TKM)
-                return TKM_PASSPORT;
+        if(mode == DocumentType.DRIVER_LICENSE) {
+            throw new BotException("этот сервис еще не готов)");
         }
-
-        return undetectedCountry;
+        String ret;
+        switch (countryCode) {
+            case AZE -> ret = AZE_PASSPORT;
+            case TJK -> ret = TJK_PASSPORT;
+            case IND -> ret = IND_PASSPORT;
+            case TUR -> ret = TUR_PASSPORT;
+            case TKM -> ret = TKM_PASSPORT;
+            case PHL -> ret = PHL_PASSPORT;
+            default -> ret = undetectedCountry;
+        }
+        return ret;
     }
 }

@@ -47,6 +47,8 @@ public sealed abstract class DocumentDto permits PassportDto, DriverLicenseDto{
                 .surname_in_eng(validateField(person.surname_in_eng()))
                 .name(validateField(person.name()))
                 .name_in_eng(validateField(person.name_in_eng()))
+                .given_names(validateField(person.given_names()))
+                .middle_name(validateField(person.middle_name()))
                 .patronymic(validateField(person.patronymic()))
                 .patronymic_in_eng(validateField(person.patronymic_in_eng()))
                 .birth_date(validateField(person.birth_date()))

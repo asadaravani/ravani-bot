@@ -2,7 +2,7 @@ package com.ravani.ravanibot.service.impl;
 
 import com.ravani.ravanibot.entities.BotUser;
 import com.ravani.ravanibot.enums.DocumentType;
-import com.ravani.ravanibot.exceptions.AdminPanelException;
+import com.ravani.ravanibot.exceptions.BotException;
 import com.ravani.ravanibot.repos.UserRepository;
 import com.ravani.ravanibot.service.UserService;
 import lombok.RequiredArgsConstructor;
@@ -19,19 +19,19 @@ public class UserServiceImpl implements UserService {
     public List<BotUser> getAllUsers() {
         List<BotUser> users = repository.findAll();
         if (users.isEmpty()) {
-            throw new AdminPanelException("DB is empty❗");
+            throw new BotException("DataBase is empty❗");
         }
         return users;
     }
 
     @Override
     public BotUser getUserByChatId(Long chatId) {
-        return repository.findByChatId(chatId).orElseThrow(() -> new AdminPanelException("👔User not found with chatId: "  + chatId + "❗"));
+        return repository.findByChatId(chatId).orElseThrow(() -> new BotException("4️⃣0️⃣4️⃣"));
     }
 
     @Override
     public BotUser getUserByName(String name) {
-        return repository.findByName(name).orElseThrow(() -> new AdminPanelException("👔User not found with name: "  + name + "❗"));
+        return repository.findByName(name).orElseThrow(() -> new BotException("4️⃣0️⃣4️⃣"));
     }
 
     @Override
@@ -71,7 +71,7 @@ public class UserServiceImpl implements UserService {
         try {
             BotUser user = getUserByChatId(chatId);
             return true;
-        }catch (AdminPanelException e) {
+        }catch (BotException e) {
             return false;
         }
     }

@@ -1,7 +1,6 @@
 package com.ravani.ravanibot.bot;
 
-import com.ravani.ravanibot.exceptions.BaseException;
-import com.ravani.ravanibot.exceptions.GlobalExceptionHandler;
+import com.ravani.ravanibot.exceptions.BotException;
 import com.ravani.ravanibot.service.BotService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -15,7 +14,6 @@ import java.net.URL;
 
 @Component
 public class RavaniBot implements LongPollingBot {
-    private GlobalExceptionHandler globalExceptionHandler;
     private BotService service;
     private final DefaultBotOptions botOptions;
 
@@ -35,11 +33,11 @@ public class RavaniBot implements LongPollingBot {
         if (update.hasMessage()) {
             try{
                 service.handleMessage(update.getMessage());
-            }catch (BaseException e){
-                globalExceptionHandler.handle(e);
-            }catch (Exception e){
-                e.printStackTrace();
-                service.sendMessageToOwner("⚙️: " + update.getMessage().getChatId()+ "\n" + e.getMessage());
+            }
+            catch (Exception e){
+                String exceptionName = e instanceof BotException ? "⚠️: " : e.getClass().getCanonicalName() + "⚙️: ";
+                String fullMessage = exceptionName + e.getMessage();
+                service.sendMessage(update.getMessage().getChatId(),  fullMessage);
             }
         }
     }
@@ -78,9 +76,4 @@ public class RavaniBot implements LongPollingBot {
         this.service = service;
     }
 
-    @Autowired
-    @Lazy
-    public void setGlobalExceptionHandler(GlobalExceptionHandler globalExceptionHandler) {
-        this.globalExceptionHandler = globalExceptionHandler;
-    }
 }
