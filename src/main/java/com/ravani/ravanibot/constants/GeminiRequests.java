@@ -238,6 +238,7 @@ Task:
 - Translate all necessary fields from English into proper formal Russian, suitable for sworn translation.
 - Convert all dates to format: DD.MM.YYYY.
 - Gender will be Ж or М.
+- If the place of issue is unrecognizable, try to infer from context, bot not leave empty.
 - Do not leave any field without translation.
 
 Rules:
