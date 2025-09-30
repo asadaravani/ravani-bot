@@ -11,10 +11,12 @@ public class ComRes {
     public static final String MANUAL = "man";
 
     public static final String MANUAL_COMMAND_RESPONSE =
-            INFO + " returns info about all users. User <name> args to get specific user's info\n\n"
+            INFO + " returns info about all users.\n\n"
+                    + INFO + " <name> args to get specific user's info\n\n"
                     + ADD + " <chatId> and <name>.\n\n"
                     + REMOVE + " <name>.\n\n"
-                    + RESET + " <name>.\n\n";
+                    + RESET + " <name>.\n\n"
+                    + "version 2.4.01";
 
     public static final String INVALID_COMMAND = "Invalid command⚠️, your majesty🙇‍♂️";
     public static final String NO_COMMAND_FOUND = "Command me🙇‍, your majesty️👑";
