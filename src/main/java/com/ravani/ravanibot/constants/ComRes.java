@@ -18,9 +18,9 @@ public class ComRes {
                     + RESET + " <name>.\n\n"
                     + "version 2.4.01";
 
-    public static final String INVALID_COMMAND = "Invalid command⚠️, your majesty🙇‍♂️";
-    public static final String NO_COMMAND_FOUND = "Command me🙇‍, your majesty️👑";
-    public static final String POSITIVE_RESPONSE = "It is ✅, your grace👑";
+    public static final String INVALID_COMMAND = "Invalid command⚠️";
+    public static final String NO_COMMAND_FOUND = "Hello, boss🫡";
+    public static final String POSITIVE_RESPONSE = "✅";
 
     public static final String UNKNOWN_USER = "Hi, сообщите моему владельцу @asadaravani, чтобы получить доступ к моему сервису.\n"
             + "Передайте ему наш chat ID: ";
