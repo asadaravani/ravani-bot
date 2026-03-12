@@ -9,5 +9,5 @@ public class SpecialUserDetails {
 
     public static Long ASHIM_CHAT_ID = -4671846708L;
 
-    public static Long KAIRAT_CHAT_ID = 1372608437L;
+    public static Long KAIRAT_CHAT_ID =  1372608437L;
 }
