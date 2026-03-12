@@ -30,6 +30,9 @@ public class PassportDocGenerator {
                 return gulmiraExecute(country, passportDto);
             }
         }
+        else if (Objects.equals(chatId, SpecialUserDetails.KAIRAT_CHAT_ID)) {
+            return kairatExecute(country, passportDto);
+        }
         switch (country) {
             case UZB -> {
                 document = loadFile("bema/uzb_passport.docx");
@@ -63,6 +66,47 @@ public class PassportDocGenerator {
             default -> throw new BotException("Только паспорта UZB, ARM, KGZ, TJK, AZE");
         }
         replaceField(document.getParagraphs(), fields);
+        return document;
+    }
+    private static XWPFDocument kairatExecute(CountryCode country, PassportDto passportDto) {
+        Map<String, String> fields;
+        XWPFDocument document;
+        switch (country) {
+            case UZB -> {
+                if (passportDto.getNumber().startsWith("A"))
+                    throw new BotException("AC пока нет");
+                document = loadFile("kairat/uzb_passport_new.docx");
+                fields = mapFieldsUzbNew(passportDto);
+            }
+            case TKM -> {
+                document = loadFile("kairat/tkm_passport.docx");
+                fields = mapFieldsKgzOld(passportDto);
+            }
+            case TUR -> {
+                document = loadFile("kairat/tur_passport.docx");
+                fields = mapFieldsTur(passportDto);
+            }
+            case AZE ->  {
+                document = loadFile("kairat/aze_passport.docx");
+                fields = mapFieldsAzeGul(passportDto);
+            }
+            case KAZ -> {
+                document =  loadFile("kairat/kaz_passport.docx");
+                fields = mapFieldsKgzNew(passportDto);
+            }
+            case KGZ -> {
+                if(passportDto.getNumber().startsWith("A")) {
+                    document = loadFile("kairat/kgz_passport_old.docx");
+                    fields = mapFieldsKgzOldAshim(passportDto);
+                    break;
+                }
+                document =  loadFile("kairat/kgz_passport_new.docx");
+                fields = mapFieldsKgzNewKairat(passportDto);
+            }
+            default -> throw new BotException("Только паспорта UZB, TUR, TKM, AZE, KAZ, KGZ");
+        }
+        replaceField(document.getParagraphs(), fields);
+        replaceFieldInLayer(document, fields);
         return document;
     }
     private static XWPFDocument gulmiraExecute(CountryCode country, PassportDto passportDto) {
@@ -114,7 +158,6 @@ public class PassportDocGenerator {
             default -> throw new BotException("Только паспорта UZB, IND, TUR, TKM, AZE, KAZ, TJK, KGZ, PHL");
         }
         replaceFieldInLayer(document, fields);
-        System.out.println(fields);
         return document;
     }
 
@@ -197,6 +240,13 @@ public class PassportDocGenerator {
         values.put("Поля8", generateDateFormatWithSpace(dto.getExpiryDate()));
         values.put("СПАш3", DocumentMRZGenerator.buildMrzFirstLine(dto.getPerson().surname_in_eng(), dto.getPerson().name_in_eng(), dto.getPerson().patronymic_in_eng()));
         values.put("СПАш4", generateMRZ2Ashim(DocumentMRZGenerator.generateMrzSecondLine(dto)));
+        return values;
+    }
+    private static Map<String, String> mapFieldsKgzNewKairat(PassportDto dto) {
+        Map<String, String> values = mapFieldsKgzNewAshim(dto);
+        values.replace("СПАш1", dto.getPerson().personal_number() + "<<"
+        + dto.getPerson().surname() + " " + dto.getPerson().name() + "<<"
+        + generateDateFormatWithSpace(dto.getPerson().birth_date()));
         return values;
     }
     private static Map<String, String> mapFieldsKgzNewAshim(PassportDto dto) {
