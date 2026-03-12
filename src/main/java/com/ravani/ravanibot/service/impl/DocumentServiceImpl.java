@@ -50,7 +50,7 @@ public class DocumentServiceImpl implements DocumentService {
                 throw new BotException( "❌File from 📁resources is null" );
             return new XWPFDocument(templateStream);
         }catch (Exception e){
-            throw new BotException("❌Cannot load file from 📁resources: " + filePath);
+            throw new BotException("❌Cannot load file from 📁resources");
         }
     }
     static void replaceField(List<XWPFParagraph> paragraphs, Map<String, String> values) {
