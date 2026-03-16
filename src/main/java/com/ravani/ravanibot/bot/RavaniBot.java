@@ -35,6 +35,7 @@ public class RavaniBot implements LongPollingBot {
                 service.handleMessage(update.getMessage());
             }
             catch (Exception e){
+                e.printStackTrace();
                 String exceptionName = e instanceof BotException ? "⚠️: " : e.getClass().getCanonicalName() + "⚙️: ";
                 String fullMessage = exceptionName + e.getMessage();
                 service.sendMessage(update.getMessage().getChatId(),  fullMessage);

@@ -1,7 +1,7 @@
 package com.ravani.ravanibot.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.ravani.ravanibot.dtos.DocumentDto;
 import com.ravani.ravanibot.dtos.DriverLicenseDto;
 import com.ravani.ravanibot.dtos.PassportDto;
@@ -9,12 +9,14 @@ import com.ravani.ravanibot.enums.CountryCode;
 import com.ravani.ravanibot.enums.DocumentType;
 import com.ravani.ravanibot.exceptions.BotException;
 import com.ravani.ravanibot.service.DocumentService;
-import lombok.SneakyThrows;
 import org.apache.poi.xwpf.usermodel.*;
+import org.jsonrepairj.JsonRepair;
 import org.springframework.stereotype.Component;
 import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
+
+import static org.jsonrepairj.Json.MAPPER;
 
 @Component
 public class DocumentServiceImpl implements DocumentService {
@@ -26,22 +28,38 @@ public class DocumentServiceImpl implements DocumentService {
                 : DriverLicenseDocGenerator.execute(country, (DriverLicenseDto) dto, chatId);
     }
 
-    @SneakyThrows
     @Override
     public DocumentDto mapToDocumentDto(String response, DocumentType type) {
-        ObjectMapper mapper = new ObjectMapper();
-        if (type == DocumentType.PASSPORT){
+        try {
+            JsonNode node;
+
             try {
-                return mapper.readValue(response, PassportDto.class);
-            }catch (Exception e){
-                List<PassportDto> documents = mapper.readValue(response, new TypeReference<>() {});
-                return documents.stream()
-                        .filter(DocumentDto::isDocument)
-                        .findFirst()
-                        .orElse(documents.get(0));
+                node = MAPPER.readTree(response);
+            } catch (Exception e) {
+                response = JsonRepair.repairJson(response);
+                node = MAPPER.readTree(response);
             }
+
+            if (type == DocumentType.PASSPORT) {
+
+                if (node.isArray()) {
+                    List<PassportDto> documents =
+                            MAPPER.convertValue(node, new TypeReference<List<PassportDto>>() {});
+
+                    return documents.stream()
+                            .filter(DocumentDto::isDocument)
+                            .findFirst()
+                            .orElse(documents.get(0));
+                }
+
+                return MAPPER.treeToValue(node, PassportDto.class);
+            }
+
+            return MAPPER.treeToValue(node, DriverLicenseDto.class);
+
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to parse document JSON", e);
         }
-        return mapper.readValue(response, DriverLicenseDto.class);
     }
 
     static XWPFDocument loadFile(String filePath) {

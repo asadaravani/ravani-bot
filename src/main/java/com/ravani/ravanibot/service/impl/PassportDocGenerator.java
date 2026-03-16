@@ -95,12 +95,17 @@ public class PassportDocGenerator {
                 fields = mapFieldsKgzNew(passportDto);
             }
             case KGZ -> {
-                if(passportDto.getNumber().startsWith("A")) {
+                if (passportDto.getNumber().startsWith("A")) {
                     document = loadFile("kairat/kgz_passport_old.docx");
                     fields = mapFieldsKgzOldAshim(passportDto);
                     break;
                 }
-                document =  loadFile("kairat/kgz_passport_new.docx");
+                else if (passportDto.getNumber().startsWith("KP"))
+                    document = loadFile("kairat/kgz_passport_newest.docx");
+                else if (passportDto.getNumber().contains("PD"))
+                    document = loadFile("kairat/kgz_passport_dip.docx");
+                else
+                    document =  loadFile("kairat/kgz_passport_new.docx");
                 fields = mapFieldsKgzNewKairat(passportDto);
             }
             default -> throw new BotException("Только паспорта UZB, TUR, TKM, AZE, KAZ, KGZ");
