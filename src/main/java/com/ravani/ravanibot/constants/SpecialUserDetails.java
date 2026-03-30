@@ -5,7 +5,7 @@ public class SpecialUserDetails {
 
     public static Long BEMA_CHAT_ID = 6337978201L;
 
-    public static Long GULMIRA_CHAT_ID = 5049035911L;
+    public static Long GULMIRA_CHAT_ID = 8506403385L;
 
     public static Long ASHIM_CHAT_ID = -4671846708L;
 
