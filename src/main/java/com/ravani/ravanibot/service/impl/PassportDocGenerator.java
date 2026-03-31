@@ -149,7 +149,10 @@ public class PassportDocGenerator {
                 fields = mapFieldsKgzNew(passportDto);
             }
             case KGZ -> {
-                document =  loadFile("gulmira/kgz_passport_new.docx");
+                if (passportDto.getNumber().startsWith("KP"))
+                    document = loadFile("gulmira/kgz_passport_newest.docx");
+                else
+                    document =  loadFile("gulmira/kgz_passport_new.docx");
                 fields = mapFieldsKgzNewGul(passportDto);
             }
             case TJK -> {
