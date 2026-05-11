@@ -20,7 +20,7 @@ public class PassportDocGenerator {
     static XWPFDocument execute(CountryCode country, PassportDto passportDto, Long chatId) {
         Map<String, String> fields;
         XWPFDocument document;
-        if (Objects.equals(chatId, SpecialUserDetails.GULMIRA_CHAT_ID)) {
+        if (Objects.equals(chatId, SpecialUserDetails.GULMIRA_CHAT_ID) ||  Objects.equals(chatId, SpecialUserDetails.GULMIRA_2_CHAT_ID)) {
             return gulmiraExecute(country, passportDto);
         }
         else if (Objects.equals(chatId, SpecialUserDetails.ASHIM_CHAT_ID)) {
