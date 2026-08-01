@@ -1,0 +1,3196 @@
+This file is a merged representation of the entire codebase, combined into a single document by Repomix.
+
+<file_summary>
+This section contains a summary of this file.
+
+<purpose>
+This file contains a packed representation of the entire repository's contents.
+It is designed to be easily consumable by AI systems for analysis, code review,
+or other automated processes.
+</purpose>
+
+<file_format>
+The content is organized as follows:
+1. This summary section
+2. Repository information
+3. Directory structure
+4. Repository files (if enabled)
+5. Multiple file entries, each consisting of:
+  - File path as an attribute
+  - Full contents of the file
+</file_format>
+
+<usage_guidelines>
+- This file should be treated as read-only. Any changes should be made to the
+  original repository files, not this packed version.
+- When processing this file, use the file path to distinguish
+  between different files in the repository.
+- Be aware that this file may contain sensitive information. Handle it with
+  the same level of security as you would the original repository.
+</usage_guidelines>
+
+<notes>
+- Some files may have been excluded based on .gitignore rules and Repomix's configuration
+- Binary files are not included in this packed representation. Please refer to the Repository Structure section for a complete list of file paths, including binary files
+- Files matching patterns in .gitignore are excluded
+- Files matching default ignore patterns are excluded
+- Files are sorted by Git change count (files with more changes are at the bottom)
+</notes>
+
+</file_summary>
+
+<directory_structure>
+.github/
+  workflows/
+    deploy.yml
+.mvn/
+  wrapper/
+    maven-wrapper.properties
+src/
+  main/
+    java/
+      com/
+        ravani/
+          ravanibot/
+            bot/
+              BotInitializer.java
+              RavaniBot.java
+            config/
+              GeminiConfig.java
+              TesseractConfig.java
+            constants/
+              ComRes.java
+              GeminiRequests.java
+              SpecialUserDetails.java
+            dtos/
+              DocumentDto.java
+              DownloadedFile.java
+              DriverLicenseDto.java
+              PassportDto.java
+              PersonDto.java
+            entities/
+              BotUser.java
+            enums/
+              CountryCode.java
+              DocumentType.java
+            exceptions/
+              BotException.java
+            repos/
+              UserRepository.java
+            service/
+              impl/
+                BotServiceImpl.java
+                CommandServiceImpl.java
+                DocumentServiceImpl.java
+                DriverLicenseDocGenerator.java
+                FileDownloaderImpl.java
+                GeminiServiceImpl.java
+                PassportDocGenerator.java
+                UserServiceImpl.java
+              BotService.java
+              CommandService.java
+              DocumentService.java
+              FileDownloader.java
+              GeminiService.java
+              TelegramSender.java
+              UserService.java
+            utils/
+              CountryCodeExtractor.java
+              DocumentMRZGenerator.java
+            RavaniBotApplication.java
+    resources/
+      ashim/
+        kgz_passport_new.docx
+        kgz_passport_old.docx
+      bema/
+        arm_passport.docx
+        aze_passport.docx
+        kgz_passport_new.docx
+        kgz_passport_old.docx
+        tjk_passport.docx
+        uzb_passport.docx
+      gulmira/
+        aze_passport.docx
+        ind_passport.docx
+        kaz_passport.docx
+        kgz_passport_new.docx
+        kgz_passport_newest.docx
+        phl_passport.docx
+        tjk_passport.docx
+        tkm_passport.docx
+        tur_passport_1st.docx
+        tur_passport_2nd.docx
+        tur_passport_3rd.docx
+        uzb_passport_new.docx
+        uzb_passport_old.docx
+      kairat/
+        aze_passport.docx
+        kaz_passport.docx
+        kgz_passport_dip.docx
+        kgz_passport_new.docx
+        kgz_passport_newest.docx
+        kgz_passport_old.docx
+        tkm_passport.docx
+        tur_passport.docx
+        uzb_passport_new.docx
+  test/
+    java/
+      com/
+        ravani/
+          ravanibot/
+            RavaniBotApplicationTests.java
+.gitattributes
+.gitignore
+deploy.sh
+Dockerfile
+LICENSE
+mvnw
+mvnw.cmd
+pom.xml
+README.md
+</directory_structure>
+
+<files>
+This section contains the contents of the repository's files.
+
+<file path=".github/workflows/deploy.yml">
+name: Deploy to DigitalOcean
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Set up SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.DO_SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H ${{ secrets.DO_HOST }} >> ~/.ssh/known_hosts
+
+      - name: SSH and Deploy
+        run: |
+          ssh -o StrictHostKeyChecking=yes ${{ secrets.DO_USER }}@${{ secrets.DO_HOST }} "
+            cd ravani-bot &&
+            git reset --hard HEAD &&
+            git pull origin main &&
+            chmod +x deploy.sh &&
+            ./deploy.sh
+          "
+</file>
+
+<file path=".mvn/wrapper/maven-wrapper.properties">
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+wrapperVersion=3.3.2
+distributionType=only-script
+distributionUrl=https://repo.maven.apache.org/maven2/org/apache/maven/apache-maven/3.9.9/apache-maven-3.9.9-bin.zip
+</file>
+
+<file path="src/main/java/com/ravani/ravanibot/bot/BotInitializer.java">
+package com.ravani.ravanibot.bot;
+
+import jakarta.annotation.PostConstruct;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Component;
+import org.telegram.telegrambots.meta.TelegramBotsApi;
+import org.telegram.telegrambots.updatesreceivers.DefaultBotSession;
+
+@Component
+@RequiredArgsConstructor
+public class BotInitializer {
+
+    private final RavaniBot ravaniBot;
+
+    @PostConstruct
+    public void init() {
+        try {
+            TelegramBotsApi botsApi = new TelegramBotsApi(DefaultBotSession.class);
+            botsApi.registerBot(ravaniBot);
+            System.out.println("✅ RavaniBot registered and polling started.");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}
+</file>
+
+<file path="src/main/java/com/ravani/ravanibot/dtos/DownloadedFile.java">
+package com.ravani.ravanibot.dtos;
+
+import lombok.Builder;
+
+@Builder
+public record DownloadedFile (
+        byte[] bytes, String contentType
+){}
+</file>
+
+<file path="src/main/java/com/ravani/ravanibot/repos/UserRepository.java">
+package com.ravani.ravanibot.repos;
+
+import com.ravani.ravanibot.entities.BotUser;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+import java.util.Optional;
+
+
+@Repository
+public interface UserRepository extends JpaRepository<BotUser, Long> {
+    Optional<BotUser> findByChatId(Long chatId);
+    Optional<BotUser> findByName(String name);
+}
+</file>
+
+<file path="src/main/java/com/ravani/ravanibot/service/BotService.java">
+package com.ravani.ravanibot.service;
+
+import lombok.SneakyThrows;
+import org.telegram.telegrambots.meta.api.objects.Message;
+
+public interface BotService {
+    void handleMessage(Message message);
+
+    @SneakyThrows
+    void sendMessage(Long chatId, String message);
+
+    void sendMessageToOwner(String message);
+}
+</file>
+
+<file path="src/main/java/com/ravani/ravanibot/service/CommandService.java">
+package com.ravani.ravanibot.service;
+
+public interface CommandService {
+    String generate(String message);
+}
+</file>
+
+<file path="src/main/java/com/ravani/ravanibot/service/FileDownloader.java">
+package com.ravani.ravanibot.service;
+
+import com.ravani.ravanibot.dtos.DownloadedFile;
+import lombok.SneakyThrows;
+import org.telegram.telegrambots.meta.api.objects.Message;
+
+public interface FileDownloader {
+    @SneakyThrows
+    DownloadedFile downloadFile(Message message);
+}
+</file>
+
+<file path="src/main/java/com/ravani/ravanibot/service/TelegramSender.java">
+package com.ravani.ravanibot.service;
+
+import com.ravani.ravanibot.bot.RavaniBot;
+import lombok.Getter;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
+import org.telegram.telegrambots.bots.DefaultAbsSender;
+
+@Getter
+@Component
+public class TelegramSender extends DefaultAbsSender {
+    private final String token;
+
+    protected TelegramSender(@Value("${bot.token}") String token, RavaniBot ravaniBot) {
+        super(ravaniBot.getOptions(), token);
+        this.token = token;
+    }
+}
+</file>
+
+<file path="src/main/java/com/ravani/ravanibot/RavaniBotApplication.java">
+package com.ravani.ravanibot;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+
+@SpringBootApplication
+public class RavaniBotApplication {
+
+    public static void main(String[] args) {
+        SpringApplication.run(RavaniBotApplication.class, args);
+    }
+
+}
+</file>
+
+<file path="src/test/java/com/ravani/ravanibot/RavaniBotApplicationTests.java">
+package com.ravani.ravanibot;
+
+import org.junit.jupiter.api.Test;
+import org.springframework.boot.test.context.SpringBootTest;
+
+@SpringBootTest
+class RavaniBotApplicationTests {
+
+    @Test
+    void contextLoads() {
+    }
+
+}
+</file>
+
+<file path=".gitattributes">
+/mvnw text eol=lf
+*.cmd text eol=crlf
+</file>
+
+<file path=".gitignore">
+HELP.md
+target/
+.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+src/main/resources/application.yml
+
+### STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
+
+### NetBeans ###
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+build/
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+### VS Code ###
+.vscode/
+</file>
+
+<file path="mvnw">
+#!/bin/sh
+# ----------------------------------------------------------------------------
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+# ----------------------------------------------------------------------------
+
+# ----------------------------------------------------------------------------
+# Apache Maven Wrapper startup batch script, version 3.3.2
+#
+# Optional ENV vars
+# -----------------
+#   JAVA_HOME - location of a JDK home dir, required when download maven via java source
+#   MVNW_REPOURL - repo url base for downloading maven distribution
+#   MVNW_USERNAME/MVNW_PASSWORD - user and password for downloading maven
+#   MVNW_VERBOSE - true: enable verbose log; debug: trace the mvnw script; others: silence the output
+# ----------------------------------------------------------------------------
+
+set -euf
+[ "${MVNW_VERBOSE-}" != debug ] || set -x
+
+# OS specific support.
+native_path() { printf %s\\n "$1"; }
+case "$(uname)" in
+CYGWIN* | MINGW*)
+  [ -z "${JAVA_HOME-}" ] || JAVA_HOME="$(cygpath --unix "$JAVA_HOME")"
+  native_path() { cygpath --path --windows "$1"; }
+  ;;
+esac
+
+# set JAVACMD and JAVACCMD
+set_java_home() {
+  # For Cygwin and MinGW, ensure paths are in Unix format before anything is touched
+  if [ -n "${JAVA_HOME-}" ]; then
+    if [ -x "$JAVA_HOME/jre/sh/java" ]; then
+      # IBM's JDK on AIX uses strange locations for the executables
+      JAVACMD="$JAVA_HOME/jre/sh/java"
+      JAVACCMD="$JAVA_HOME/jre/sh/javac"
+    else
+      JAVACMD="$JAVA_HOME/bin/java"
+      JAVACCMD="$JAVA_HOME/bin/javac"
+
+      if [ ! -x "$JAVACMD" ] || [ ! -x "$JAVACCMD" ]; then
+        echo "The JAVA_HOME environment variable is not defined correctly, so mvnw cannot run." >&2
+        echo "JAVA_HOME is set to \"$JAVA_HOME\", but \"\$JAVA_HOME/bin/java\" or \"\$JAVA_HOME/bin/javac\" does not exist." >&2
+        return 1
+      fi
+    fi
+  else
+    JAVACMD="$(
+      'set' +e
+      'unset' -f command 2>/dev/null
+      'command' -v java
+    )" || :
+    JAVACCMD="$(
+      'set' +e
+      'unset' -f command 2>/dev/null
+      'command' -v javac
+    )" || :
+
+    if [ ! -x "${JAVACMD-}" ] || [ ! -x "${JAVACCMD-}" ]; then
+      echo "The java/javac command does not exist in PATH nor is JAVA_HOME set, so mvnw cannot run." >&2
+      return 1
+    fi
+  fi
+}
+
+# hash string like Java String::hashCode
+hash_string() {
+  str="${1:-}" h=0
+  while [ -n "$str" ]; do
+    char="${str%"${str#?}"}"
+    h=$(((h * 31 + $(LC_CTYPE=C printf %d "'$char")) % 4294967296))
+    str="${str#?}"
+  done
+  printf %x\\n $h
+}
+
+verbose() { :; }
+[ "${MVNW_VERBOSE-}" != true ] || verbose() { printf %s\\n "${1-}"; }
+
+die() {
+  printf %s\\n "$1" >&2
+  exit 1
+}
+
+trim() {
+  # MWRAPPER-139:
+  #   Trims trailing and leading whitespace, carriage returns, tabs, and linefeeds.
+  #   Needed for removing poorly interpreted newline sequences when running in more
+  #   exotic environments such as mingw bash on Windows.
+  printf "%s" "${1}" | tr -d '[:space:]'
+}
+
+# parse distributionUrl and optional distributionSha256Sum, requires .mvn/wrapper/maven-wrapper.properties
+while IFS="=" read -r key value; do
+  case "${key-}" in
+  distributionUrl) distributionUrl=$(trim "${value-}") ;;
+  distributionSha256Sum) distributionSha256Sum=$(trim "${value-}") ;;
+  esac
+done <"${0%/*}/.mvn/wrapper/maven-wrapper.properties"
+[ -n "${distributionUrl-}" ] || die "cannot read distributionUrl property in ${0%/*}/.mvn/wrapper/maven-wrapper.properties"
+
+case "${distributionUrl##*/}" in
+maven-mvnd-*bin.*)
+  MVN_CMD=mvnd.sh _MVNW_REPO_PATTERN=/maven/mvnd/
+  case "${PROCESSOR_ARCHITECTURE-}${PROCESSOR_ARCHITEW6432-}:$(uname -a)" in
+  *AMD64:CYGWIN* | *AMD64:MINGW*) distributionPlatform=windows-amd64 ;;
+  :Darwin*x86_64) distributionPlatform=darwin-amd64 ;;
+  :Darwin*arm64) distributionPlatform=darwin-aarch64 ;;
+  :Linux*x86_64*) distributionPlatform=linux-amd64 ;;
+  *)
+    echo "Cannot detect native platform for mvnd on $(uname)-$(uname -m), use pure java version" >&2
+    distributionPlatform=linux-amd64
+    ;;
+  esac
+  distributionUrl="${distributionUrl%-bin.*}-$distributionPlatform.zip"
+  ;;
+maven-mvnd-*) MVN_CMD=mvnd.sh _MVNW_REPO_PATTERN=/maven/mvnd/ ;;
+*) MVN_CMD="mvn${0##*/mvnw}" _MVNW_REPO_PATTERN=/org/apache/maven/ ;;
+esac
+
+# apply MVNW_REPOURL and calculate MAVEN_HOME
+# maven home pattern: ~/.m2/wrapper/dists/{apache-maven-<version>,maven-mvnd-<version>-<platform>}/<hash>
+[ -z "${MVNW_REPOURL-}" ] || distributionUrl="$MVNW_REPOURL$_MVNW_REPO_PATTERN${distributionUrl#*"$_MVNW_REPO_PATTERN"}"
+distributionUrlName="${distributionUrl##*/}"
+distributionUrlNameMain="${distributionUrlName%.*}"
+distributionUrlNameMain="${distributionUrlNameMain%-bin}"
+MAVEN_USER_HOME="${MAVEN_USER_HOME:-${HOME}/.m2}"
+MAVEN_HOME="${MAVEN_USER_HOME}/wrapper/dists/${distributionUrlNameMain-}/$(hash_string "$distributionUrl")"
+
+exec_maven() {
+  unset MVNW_VERBOSE MVNW_USERNAME MVNW_PASSWORD MVNW_REPOURL || :
+  exec "$MAVEN_HOME/bin/$MVN_CMD" "$@" || die "cannot exec $MAVEN_HOME/bin/$MVN_CMD"
+}
+
+if [ -d "$MAVEN_HOME" ]; then
+  verbose "found existing MAVEN_HOME at $MAVEN_HOME"
+  exec_maven "$@"
+fi
+
+case "${distributionUrl-}" in
+*?-bin.zip | *?maven-mvnd-?*-?*.zip) ;;
+*) die "distributionUrl is not valid, must match *-bin.zip or maven-mvnd-*.zip, but found '${distributionUrl-}'" ;;
+esac
+
+# prepare tmp dir
+if TMP_DOWNLOAD_DIR="$(mktemp -d)" && [ -d "$TMP_DOWNLOAD_DIR" ]; then
+  clean() { rm -rf -- "$TMP_DOWNLOAD_DIR"; }
+  trap clean HUP INT TERM EXIT
+else
+  die "cannot create temp dir"
+fi
+
+mkdir -p -- "${MAVEN_HOME%/*}"
+
+# Download and Install Apache Maven
+verbose "Couldn't find MAVEN_HOME, downloading and installing it ..."
+verbose "Downloading from: $distributionUrl"
+verbose "Downloading to: $TMP_DOWNLOAD_DIR/$distributionUrlName"
+
+# select .zip or .tar.gz
+if ! command -v unzip >/dev/null; then
+  distributionUrl="${distributionUrl%.zip}.tar.gz"
+  distributionUrlName="${distributionUrl##*/}"
+fi
+
+# verbose opt
+__MVNW_QUIET_WGET=--quiet __MVNW_QUIET_CURL=--silent __MVNW_QUIET_UNZIP=-q __MVNW_QUIET_TAR=''
+[ "${MVNW_VERBOSE-}" != true ] || __MVNW_QUIET_WGET='' __MVNW_QUIET_CURL='' __MVNW_QUIET_UNZIP='' __MVNW_QUIET_TAR=v
+
+# normalize http auth
+case "${MVNW_PASSWORD:+has-password}" in
+'') MVNW_USERNAME='' MVNW_PASSWORD='' ;;
+has-password) [ -n "${MVNW_USERNAME-}" ] || MVNW_USERNAME='' MVNW_PASSWORD='' ;;
+esac
+
+if [ -z "${MVNW_USERNAME-}" ] && command -v wget >/dev/null; then
+  verbose "Found wget ... using wget"
+  wget ${__MVNW_QUIET_WGET:+"$__MVNW_QUIET_WGET"} "$distributionUrl" -O "$TMP_DOWNLOAD_DIR/$distributionUrlName" || die "wget: Failed to fetch $distributionUrl"
+elif [ -z "${MVNW_USERNAME-}" ] && command -v curl >/dev/null; then
+  verbose "Found curl ... using curl"
+  curl ${__MVNW_QUIET_CURL:+"$__MVNW_QUIET_CURL"} -f -L -o "$TMP_DOWNLOAD_DIR/$distributionUrlName" "$distributionUrl" || die "curl: Failed to fetch $distributionUrl"
+elif set_java_home; then
+  verbose "Falling back to use Java to download"
+  javaSource="$TMP_DOWNLOAD_DIR/Downloader.java"
+  targetZip="$TMP_DOWNLOAD_DIR/$distributionUrlName"
+  cat >"$javaSource" <<-END
+	public class Downloader extends java.net.Authenticator
+	{
+	  protected java.net.PasswordAuthentication getPasswordAuthentication()
+	  {
+	    return new java.net.PasswordAuthentication( System.getenv( "MVNW_USERNAME" ), System.getenv( "MVNW_PASSWORD" ).toCharArray() );
+	  }
+	  public static void main( String[] args ) throws Exception
+	  {
+	    setDefault( new Downloader() );
+	    java.nio.file.Files.copy( java.net.URI.create( args[0] ).toURL().openStream(), java.nio.file.Paths.get( args[1] ).toAbsolutePath().normalize() );
+	  }
+	}
+	END
+  # For Cygwin/MinGW, switch paths to Windows format before running javac and java
+  verbose " - Compiling Downloader.java ..."
+  "$(native_path "$JAVACCMD")" "$(native_path "$javaSource")" || die "Failed to compile Downloader.java"
+  verbose " - Running Downloader.java ..."
+  "$(native_path "$JAVACMD")" -cp "$(native_path "$TMP_DOWNLOAD_DIR")" Downloader "$distributionUrl" "$(native_path "$targetZip")"
+fi
+
+# If specified, validate the SHA-256 sum of the Maven distribution zip file
+if [ -n "${distributionSha256Sum-}" ]; then
+  distributionSha256Result=false
+  if [ "$MVN_CMD" = mvnd.sh ]; then
+    echo "Checksum validation is not supported for maven-mvnd." >&2
+    echo "Please disable validation by removing 'distributionSha256Sum' from your maven-wrapper.properties." >&2
+    exit 1
+  elif command -v sha256sum >/dev/null; then
+    if echo "$distributionSha256Sum  $TMP_DOWNLOAD_DIR/$distributionUrlName" | sha256sum -c >/dev/null 2>&1; then
+      distributionSha256Result=true
+    fi
+  elif command -v shasum >/dev/null; then
+    if echo "$distributionSha256Sum  $TMP_DOWNLOAD_DIR/$distributionUrlName" | shasum -a 256 -c >/dev/null 2>&1; then
+      distributionSha256Result=true
+    fi
+  else
+    echo "Checksum validation was requested but neither 'sha256sum' or 'shasum' are available." >&2
+    echo "Please install either command, or disable validation by removing 'distributionSha256Sum' from your maven-wrapper.properties." >&2
+    exit 1
+  fi
+  if [ $distributionSha256Result = false ]; then
+    echo "Error: Failed to validate Maven distribution SHA-256, your Maven distribution might be compromised." >&2
+    echo "If you updated your Maven version, you need to update the specified distributionSha256Sum property." >&2
+    exit 1
+  fi
+fi
+
+# unzip and move
+if command -v unzip >/dev/null; then
+  unzip ${__MVNW_QUIET_UNZIP:+"$__MVNW_QUIET_UNZIP"} "$TMP_DOWNLOAD_DIR/$distributionUrlName" -d "$TMP_DOWNLOAD_DIR" || die "failed to unzip"
+else
+  tar xzf${__MVNW_QUIET_TAR:+"$__MVNW_QUIET_TAR"} "$TMP_DOWNLOAD_DIR/$distributionUrlName" -C "$TMP_DOWNLOAD_DIR" || die "failed to untar"
+fi
+printf %s\\n "$distributionUrl" >"$TMP_DOWNLOAD_DIR/$distributionUrlNameMain/mvnw.url"
+mv -- "$TMP_DOWNLOAD_DIR/$distributionUrlNameMain" "$MAVEN_HOME" || [ -d "$MAVEN_HOME" ] || die "fail to move MAVEN_HOME"
+
+clean || :
+exec_maven "$@"
+</file>
+
+<file path="mvnw.cmd">
+<# : batch portion
+@REM ----------------------------------------------------------------------------
+@REM Licensed to the Apache Software Foundation (ASF) under one
+@REM or more contributor license agreements.  See the NOTICE file
+@REM distributed with this work for additional information
+@REM regarding copyright ownership.  The ASF licenses this file
+@REM to you under the Apache License, Version 2.0 (the
+@REM "License"); you may not use this file except in compliance
+@REM with the License.  You may obtain a copy of the License at
+@REM
+@REM    http://www.apache.org/licenses/LICENSE-2.0
+@REM
+@REM Unless required by applicable law or agreed to in writing,
+@REM software distributed under the License is distributed on an
+@REM "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+@REM KIND, either express or implied.  See the License for the
+@REM specific language governing permissions and limitations
+@REM under the License.
+@REM ----------------------------------------------------------------------------
+
+@REM ----------------------------------------------------------------------------
+@REM Apache Maven Wrapper startup batch script, version 3.3.2
+@REM
+@REM Optional ENV vars
+@REM   MVNW_REPOURL - repo url base for downloading maven distribution
+@REM   MVNW_USERNAME/MVNW_PASSWORD - user and password for downloading maven
+@REM   MVNW_VERBOSE - true: enable verbose log; others: silence the output
+@REM ----------------------------------------------------------------------------
+
+@IF "%__MVNW_ARG0_NAME__%"=="" (SET __MVNW_ARG0_NAME__=%~nx0)
+@SET __MVNW_CMD__=
+@SET __MVNW_ERROR__=
+@SET __MVNW_PSMODULEP_SAVE=%PSModulePath%
+@SET PSModulePath=
+@FOR /F "usebackq tokens=1* delims==" %%A IN (`powershell -noprofile "& {$scriptDir='%~dp0'; $script='%__MVNW_ARG0_NAME__%'; icm -ScriptBlock ([Scriptblock]::Create((Get-Content -Raw '%~f0'))) -NoNewScope}"`) DO @(
+  IF "%%A"=="MVN_CMD" (set __MVNW_CMD__=%%B) ELSE IF "%%B"=="" (echo %%A) ELSE (echo %%A=%%B)
+)
+@SET PSModulePath=%__MVNW_PSMODULEP_SAVE%
+@SET __MVNW_PSMODULEP_SAVE=
+@SET __MVNW_ARG0_NAME__=
+@SET MVNW_USERNAME=
+@SET MVNW_PASSWORD=
+@IF NOT "%__MVNW_CMD__%"=="" (%__MVNW_CMD__% %*)
+@echo Cannot start maven from wrapper >&2 && exit /b 1
+@GOTO :EOF
+: end batch / begin powershell #>
+
+$ErrorActionPreference = "Stop"
+if ($env:MVNW_VERBOSE -eq "true") {
+  $VerbosePreference = "Continue"
+}
+
+# calculate distributionUrl, requires .mvn/wrapper/maven-wrapper.properties
+$distributionUrl = (Get-Content -Raw "$scriptDir/.mvn/wrapper/maven-wrapper.properties" | ConvertFrom-StringData).distributionUrl
+if (!$distributionUrl) {
+  Write-Error "cannot read distributionUrl property in $scriptDir/.mvn/wrapper/maven-wrapper.properties"
+}
+
+switch -wildcard -casesensitive ( $($distributionUrl -replace '^.*/','') ) {
+  "maven-mvnd-*" {
+    $USE_MVND = $true
+    $distributionUrl = $distributionUrl -replace '-bin\.[^.]*$',"-windows-amd64.zip"
+    $MVN_CMD = "mvnd.cmd"
+    break
+  }
+  default {
+    $USE_MVND = $false
+    $MVN_CMD = $script -replace '^mvnw','mvn'
+    break
+  }
+}
+
+# apply MVNW_REPOURL and calculate MAVEN_HOME
+# maven home pattern: ~/.m2/wrapper/dists/{apache-maven-<version>,maven-mvnd-<version>-<platform>}/<hash>
+if ($env:MVNW_REPOURL) {
+  $MVNW_REPO_PATTERN = if ($USE_MVND) { "/org/apache/maven/" } else { "/maven/mvnd/" }
+  $distributionUrl = "$env:MVNW_REPOURL$MVNW_REPO_PATTERN$($distributionUrl -replace '^.*'+$MVNW_REPO_PATTERN,'')"
+}
+$distributionUrlName = $distributionUrl -replace '^.*/',''
+$distributionUrlNameMain = $distributionUrlName -replace '\.[^.]*$','' -replace '-bin$',''
+$MAVEN_HOME_PARENT = "$HOME/.m2/wrapper/dists/$distributionUrlNameMain"
+if ($env:MAVEN_USER_HOME) {
+  $MAVEN_HOME_PARENT = "$env:MAVEN_USER_HOME/wrapper/dists/$distributionUrlNameMain"
+}
+$MAVEN_HOME_NAME = ([System.Security.Cryptography.MD5]::Create().ComputeHash([byte[]][char[]]$distributionUrl) | ForEach-Object {$_.ToString("x2")}) -join ''
+$MAVEN_HOME = "$MAVEN_HOME_PARENT/$MAVEN_HOME_NAME"
+
+if (Test-Path -Path "$MAVEN_HOME" -PathType Container) {
+  Write-Verbose "found existing MAVEN_HOME at $MAVEN_HOME"
+  Write-Output "MVN_CMD=$MAVEN_HOME/bin/$MVN_CMD"
+  exit $?
+}
+
+if (! $distributionUrlNameMain -or ($distributionUrlName -eq $distributionUrlNameMain)) {
+  Write-Error "distributionUrl is not valid, must end with *-bin.zip, but found $distributionUrl"
+}
+
+# prepare tmp dir
+$TMP_DOWNLOAD_DIR_HOLDER = New-TemporaryFile
+$TMP_DOWNLOAD_DIR = New-Item -Itemtype Directory -Path "$TMP_DOWNLOAD_DIR_HOLDER.dir"
+$TMP_DOWNLOAD_DIR_HOLDER.Delete() | Out-Null
+trap {
+  if ($TMP_DOWNLOAD_DIR.Exists) {
+    try { Remove-Item $TMP_DOWNLOAD_DIR -Recurse -Force | Out-Null }
+    catch { Write-Warning "Cannot remove $TMP_DOWNLOAD_DIR" }
+  }
+}
+
+New-Item -Itemtype Directory -Path "$MAVEN_HOME_PARENT" -Force | Out-Null
+
+# Download and Install Apache Maven
+Write-Verbose "Couldn't find MAVEN_HOME, downloading and installing it ..."
+Write-Verbose "Downloading from: $distributionUrl"
+Write-Verbose "Downloading to: $TMP_DOWNLOAD_DIR/$distributionUrlName"
+
+$webclient = New-Object System.Net.WebClient
+if ($env:MVNW_USERNAME -and $env:MVNW_PASSWORD) {
+  $webclient.Credentials = New-Object System.Net.NetworkCredential($env:MVNW_USERNAME, $env:MVNW_PASSWORD)
+}
+[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+$webclient.DownloadFile($distributionUrl, "$TMP_DOWNLOAD_DIR/$distributionUrlName") | Out-Null
+
+# If specified, validate the SHA-256 sum of the Maven distribution zip file
+$distributionSha256Sum = (Get-Content -Raw "$scriptDir/.mvn/wrapper/maven-wrapper.properties" | ConvertFrom-StringData).distributionSha256Sum
+if ($distributionSha256Sum) {
+  if ($USE_MVND) {
+    Write-Error "Checksum validation is not supported for maven-mvnd. `nPlease disable validation by removing 'distributionSha256Sum' from your maven-wrapper.properties."
+  }
+  Import-Module $PSHOME\Modules\Microsoft.PowerShell.Utility -Function Get-FileHash
+  if ((Get-FileHash "$TMP_DOWNLOAD_DIR/$distributionUrlName" -Algorithm SHA256).Hash.ToLower() -ne $distributionSha256Sum) {
+    Write-Error "Error: Failed to validate Maven distribution SHA-256, your Maven distribution might be compromised. If you updated your Maven version, you need to update the specified distributionSha256Sum property."
+  }
+}
+
+# unzip and move
+Expand-Archive "$TMP_DOWNLOAD_DIR/$distributionUrlName" -DestinationPath "$TMP_DOWNLOAD_DIR" | Out-Null
+Rename-Item -Path "$TMP_DOWNLOAD_DIR/$distributionUrlNameMain" -NewName $MAVEN_HOME_NAME | Out-Null
+try {
+  Move-Item -Path "$TMP_DOWNLOAD_DIR/$MAVEN_HOME_NAME" -Destination $MAVEN_HOME_PARENT | Out-Null
+} catch {
+  if (! (Test-Path -Path "$MAVEN_HOME" -PathType Container)) {
+    Write-Error "fail to move MAVEN_HOME"
+  }
+} finally {
+  try { Remove-Item $TMP_DOWNLOAD_DIR -Recurse -Force | Out-Null }
+  catch { Write-Warning "Cannot remove $TMP_DOWNLOAD_DIR" }
+}
+
+Write-Output "MVN_CMD=$MAVEN_HOME/bin/$MVN_CMD"
+</file>
+
+<file path="src/main/java/com/ravani/ravanibot/config/TesseractConfig.java">
+package com.ravani.ravanibot.config;
+
+import lombok.Getter;
+import lombok.Setter;
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.stereotype.Component;
+
+@Component
+@ConfigurationProperties(prefix = "tesseract")
+@Getter
+@Setter
+public class TesseractConfig {
+
+    private String dataPath;
+}
+</file>
+
+<file path="src/main/java/com/ravani/ravanibot/entities/BotUser.java">
+package com.ravani.ravanibot.entities;
+
+import com.ravani.ravanibot.enums.DocumentType;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import java.math.BigInteger;
+
+@Entity
+@Getter
+@Setter
+@AllArgsConstructor
+@NoArgsConstructor
+public class BotUser {
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    Long id;
+    Long chatId;
+    String name;
+    BigInteger requestAmount;
+    DocumentType documentType;
+}
+</file>
+
+<file path="src/main/java/com/ravani/ravanibot/enums/DocumentType.java">
+package com.ravani.ravanibot.enums;
+
+public enum DocumentType {
+    PASSPORT,
+    DRIVER_LICENSE
+}
+</file>
+
+<file path="src/main/java/com/ravani/ravanibot/exceptions/BotException.java">
+package com.ravani.ravanibot.exceptions;
+
+public class BotException extends RuntimeException {
+    public BotException(String message) {
+        super(message);
+    }
+}
+</file>
+
+<file path="src/main/java/com/ravani/ravanibot/service/DocumentService.java">
+package com.ravani.ravanibot.service;
+
+import com.ravani.ravanibot.dtos.DocumentDto;
+import com.ravani.ravanibot.enums.DocumentType;
+import lombok.SneakyThrows;
+import org.apache.poi.xwpf.usermodel.XWPFDocument;
+
+public interface DocumentService {
+    XWPFDocument fillWordDocument(Long chatId, DocumentDto dto);
+
+    @SneakyThrows
+    DocumentDto mapToDocumentDto(String response, DocumentType type);
+}
+</file>
+
+<file path="src/main/java/com/ravani/ravanibot/service/UserService.java">
+package com.ravani.ravanibot.service;
+
+import com.ravani.ravanibot.entities.BotUser;
+import com.ravani.ravanibot.enums.DocumentType;
+
+import java.util.List;
+
+public interface UserService {
+    List<BotUser> getAllUsers();
+
+    BotUser getUserByChatId(Long chatId);
+
+    BotUser getUserByName(String name);
+
+
+    void addUser(Long chatId, String name);
+
+    void resetRequestAmount(String name);
+
+    void requestAmountPlusPlus(Long chatId);
+
+    void deleteUser(Long chatId);
+
+    boolean doesUserExist(Long chatId);
+
+    void setTranslationMode(Long chatId, DocumentType documentType);
+}
+</file>
+
+<file path="Dockerfile">
+FROM ubuntu:22.04
+
+LABEL authors="beganov"
+
+RUN apt-get update && apt-get install -y \
+    openjdk-17-jdk \
+    tesseract-ocr \
+    libleptonica-dev \
+    libtesseract-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+COPY target/ravani-bot-0.0.1-SNAPSHOT.jar app.jar
+
+EXPOSE 8080
+
+ENTRYPOINT ["java", "-jar", "app.jar"]
+</file>
+
+<file path="src/main/java/com/ravani/ravanibot/enums/CountryCode.java">
+package com.ravani.ravanibot.enums;
+
+public enum CountryCode {
+    PHL,
+    KGZ,
+    UZB,
+    TJK,
+    ARM,
+    AZE,
+    IND,
+    TKM,
+    TUR,
+    KAZ
+}
+</file>
+
+<file path="src/main/java/com/ravani/ravanibot/service/impl/DriverLicenseDocGenerator.java">
+package com.ravani.ravanibot.service.impl;
+
+import com.ravani.ravanibot.dtos.DriverLicenseDto;
+import com.ravani.ravanibot.enums.CountryCode;
+import org.apache.poi.xwpf.usermodel.XWPFDocument;
+
+public class DriverLicenseDocGenerator {
+    static XWPFDocument execute(CountryCode country, DriverLicenseDto driverLicenseDto, Long chatId) {
+        return null;
+    }
+}
+</file>
+
+<file path="src/main/java/com/ravani/ravanibot/service/impl/UserServiceImpl.java">
+package com.ravani.ravanibot.service.impl;
+
+import com.ravani.ravanibot.entities.BotUser;
+import com.ravani.ravanibot.enums.DocumentType;
+import com.ravani.ravanibot.exceptions.BotException;
+import com.ravani.ravanibot.repos.UserRepository;
+import com.ravani.ravanibot.service.UserService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import java.math.BigInteger;
+import java.util.List;
+
+@Service
+@RequiredArgsConstructor
+public class UserServiceImpl implements UserService {
+    private final UserRepository repository;
+
+    @Override
+    public List<BotUser> getAllUsers() {
+        List<BotUser> users = repository.findAll();
+        if (users.isEmpty()) {
+            throw new BotException("DataBase is empty❗");
+        }
+        return users;
+    }
+
+    @Override
+    public BotUser getUserByChatId(Long chatId) {
+        return repository.findByChatId(chatId).orElseThrow(() -> new BotException("4️⃣0️⃣4️⃣"));
+    }
+
+    @Override
+    public BotUser getUserByName(String name) {
+        return repository.findByName(name).orElseThrow(() -> new BotException("4️⃣0️⃣4️⃣"));
+    }
+
+    @Override
+    public void addUser(Long chatId, String name) {
+        BotUser user = new BotUser();
+        user.setChatId(chatId);
+        user.setName(name);
+        user.setDocumentType(DocumentType.PASSPORT);
+        repository.save(user);
+    }
+
+    @Override
+    public void resetRequestAmount(String name) {
+        BotUser user = getUserByName(name);
+        user.setRequestAmount(BigInteger.ZERO);
+        repository.save(user);
+    }
+
+    @Override
+    public void requestAmountPlusPlus(Long chatId) {
+        BotUser user = getUserByChatId(chatId);
+        if (user.getRequestAmount() == null) {
+            user.setRequestAmount(BigInteger.ZERO);
+        }
+        user.setRequestAmount(user.getRequestAmount().add(BigInteger.ONE));
+        repository.save(user);
+    }
+
+    @Override
+    public void deleteUser(Long chatId) {
+        BotUser user = getUserByChatId(chatId);
+        repository.delete(user);
+    }
+
+    @Override
+    public boolean doesUserExist(Long chatId) {
+        try {
+            BotUser user = getUserByChatId(chatId);
+            return true;
+        }catch (BotException e) {
+            return false;
+        }
+    }
+
+    @Override
+    public void setTranslationMode(Long chatId, DocumentType documentType) {
+        BotUser user = getUserByChatId(chatId);
+        user.setDocumentType(documentType);
+        repository.save(user);
+    }
+}
+</file>
+
+<file path="src/main/java/com/ravani/ravanibot/utils/DocumentMRZGenerator.java">
+package com.ravani.ravanibot.utils;
+
+import com.ravani.ravanibot.dtos.PassportDto;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+
+public class DocumentMRZGenerator {
+    public static String buildMrzFirstLine(String surname_eng, String name_eng, String patronymic_eng) {
+        StringBuilder mrz = new StringBuilder();
+        String names = patronymic_eng.isEmpty() ? name_eng : name_eng + "<" + patronymic_eng;
+        mrz.append("P<KGZ");
+        mrz.append(surname_eng).append("<<");
+        mrz.append(names);
+
+        while (mrz.length() < 44) {
+            mrz.append('<');
+        }
+
+        return mrz.substring(0, 44);
+    }
+    private static final String NATIONALITY = "KGZ";
+
+    public static String generateMrzSecondLine(PassportDto dto) {
+        char sex = dto.getPerson().gender().equalsIgnoreCase("М") ? 'M' :
+                dto.getPerson().gender().equalsIgnoreCase("Ж") ? 'F' : '<';
+
+        String passportNumber = padRight(dto.getNumber(), 9, '<');
+        String passportCheck = calculateCheckDigit(passportNumber);
+
+        String birthDate = formatToMrzDate(dto.getPerson().birth_date());
+        String birthCheck = calculateCheckDigit(birthDate);
+
+        String expiryDate = formatToMrzDate(dto.getExpiryDate());
+        String expiryCheck = calculateCheckDigit(expiryDate);
+
+        String personalNumberField = padRight(dto.getPerson().personal_number() != null ? dto.getPerson().personal_number() : "", 14, '<');
+        String personalNumberCheck = calculateCheckDigit(personalNumberField);
+
+        String sexField = (sex == 'M' || sex == 'F') ? String.valueOf(sex) : "<";
+
+        String finalCheckInput = passportNumber + passportCheck +
+                birthDate + birthCheck +
+                expiryDate + expiryCheck +
+                personalNumberField + personalNumberCheck;
+
+        String finalCheckDigit = calculateCheckDigit(finalCheckInput);
+
+        return passportNumber + passportCheck +
+                NATIONALITY +
+                birthDate + birthCheck +
+                sexField +
+                expiryDate + expiryCheck +
+                personalNumberField + personalNumberCheck +
+                finalCheckDigit;
+    }
+
+    private static String formatToMrzDate(String input) {
+        try {
+            DateTimeFormatter inputFormat = DateTimeFormatter.ofPattern("dd.MM.yyyy");
+            DateTimeFormatter mrzFormat = DateTimeFormatter.ofPattern("yyMMdd");
+            return LocalDate.parse(input, inputFormat).format(mrzFormat);
+        } catch (DateTimeParseException e) {
+            throw new RuntimeException("Invalid date: " + input);
+        }
+    }
+
+
+    private static String padRight(String value, int length, char padChar) {
+        StringBuilder result = new StringBuilder(value != null ? value : "");
+        while (result.length() < length) result.append(padChar);
+        return result.substring(0, length);
+    }
+
+    private static String calculateCheckDigit(String input) {
+        int[] weights = {7, 3, 1};
+        int sum = 0;
+
+        for (int i = 0; i < input.length(); i++) {
+            char c = input.charAt(i);
+            int value;
+
+            if (c >= '0' && c <= '9') {
+                value = c - '0';
+            } else if (c >= 'A' && c <= 'Z') {
+                value = c - 'A' + 10;
+            } else if (c == '<') {
+                value = 0;
+            } else {
+                value = 0; // fallback
+            }
+
+            sum += value * weights[i % 3];
+        }
+
+        return String.valueOf(sum % 10);
+    }
+
+}
+</file>
+
+<file path="LICENSE">
+Copyright (c) 2025 Asadbek Beganov
+
+All rights reserved.
+
+This repository is made available only for viewing purposes by recruiters, HRs, or interested parties.
+
+You may not:
+- Clone or copy the repository
+- Use the code in any project (personal, commercial, or educational)
+- Modify, distribute, or deploy the code
+- Share any part of the code publicly
+
+Any unauthorized usage is strictly prohibited.
+This repository is for demonstration and recruitment purposes only.
+</file>
+
+<file path="README.md">
+# Ravani Bot
+
+A Telegram bot developed with Java Spring Boot that translates passport information into Russian and returns the data as a `.docx` file.
+
+## 🚀 Features
+
+- **OCR Integration**: Utilizes Gemini and Tess4j for accurate text recognition from passport images.
+- **PDF Handling**: Employs Apache PDFBox for processing PDF documents.
+- **Telegram Bot API**: Interacts with users via Telegram for seamless communication.
+
+## ⚠️ Notice
+
+This project is intended for **demonstration and recruitment purposes only**.  
+The `application.yml` file contains sensitive tokens and **is excluded from the repository**.  
+**This project is not licensed for production use, redistribution, or modification.**
+
+## 📄 License
+
+This project is licensed under the [LICENSE](./LICENSE) file.
+
+## 📞 Contact
+
+For inquiries, please contact [Asadbek Beganov](https://www.linkedin.com/in/asadaravani/).
+</file>
+
+<file path="src/main/java/com/ravani/ravanibot/dtos/DriverLicenseDto.java">
+package com.ravani.ravanibot.dtos;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.Getter;
+
+@Getter
+public final class DriverLicenseDto extends DocumentDto {
+    private final boolean isDriverLicense;
+    private final String place_of_residence;
+    private final String special_marks;
+
+    public DriverLicenseDto(
+            @JsonProperty("isDriverLicense") boolean isDriverLicense,
+            @JsonProperty("place_of_residence")  String place_of_residence,
+            @JsonProperty("special_marks")  String special_marks,
+            @JsonProperty("country") String country,
+            @JsonProperty("number") String number,
+            @JsonProperty("issueDate") String issueDate,
+            @JsonProperty("expiryDate") String expiryDate,
+            @JsonProperty("issueAuthority") String issueAuthority,
+            @JsonProperty("place_of_issue")  String place_of_issue,
+            @JsonProperty("issued_by") String issued_by,
+            @JsonProperty("person") PersonDto person
+    ) {
+        super(country, number, issueDate, expiryDate, issueAuthority,place_of_issue,issued_by, person);
+        this.place_of_residence = validateField(place_of_residence);
+        this.special_marks = validateField(special_marks);
+        this.isDriverLicense = isDriverLicense;
+    }
+}
+</file>
+
+<file path="src/main/java/com/ravani/ravanibot/service/impl/CommandServiceImpl.java">
+package com.ravani.ravanibot.service.impl;
+
+import com.ravani.ravanibot.constants.ComRes;
+import com.ravani.ravanibot.entities.BotUser;
+import com.ravani.ravanibot.exceptions.BotException;
+import com.ravani.ravanibot.service.BotService;
+import com.ravani.ravanibot.service.CommandService;
+import com.ravani.ravanibot.service.UserService;
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
+import org.springframework.stereotype.Service;
+import java.util.List;
+
+@Service
+@RequiredArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE)
+public class CommandServiceImpl implements CommandService {
+
+    BotService botService;
+    final UserService userService;
+
+    @Override
+    public String generate(String message){
+        String[] words = message.split(" ");
+        switch (words[0]) {
+            case ComRes.ADD -> {
+                return handleAddCommand(words);
+            }
+            case ComRes.REMOVE -> {
+                return handleRemoveCommand(words);
+            }
+            case ComRes.INFO ->  {
+                return handleInfoCommand(words);
+            }
+            case ComRes.MANUAL -> {
+                return ComRes.MANUAL_COMMAND_RESPONSE;
+            }
+            case ComRes.RESET ->  {
+                return handleResetCommand(words);
+            }
+        }
+        return ComRes.NO_COMMAND_FOUND;
+    }
+    private String handleAddCommand(String[] words){
+        Long chatId = Long.parseLong(words[1]);
+        userService.addUser(chatId, words[2]);
+        botService.sendMessage(chatId, ComRes.NEW_USER_GREETING);
+        return ComRes.POSITIVE_RESPONSE;
+    }
+    private String handleResetCommand(String[] words){
+        userService.resetRequestAmount(words[1]);
+        return ComRes.POSITIVE_RESPONSE;
+    }
+    private String handleRemoveCommand(String[] words){
+        if (words.length != 2){
+            throw new BotException(ComRes.INVALID_COMMAND);
+        }
+        BotUser user = userService.getUserByName(words[1]);
+        userService.deleteUser(user.getChatId());
+        return ComRes.POSITIVE_RESPONSE;
+    }
+
+    private String handleInfoCommand(String[] words){
+        if (words.length > 2){
+            throw new BotException(ComRes.INVALID_COMMAND);
+        }
+        if (words.length == 2){
+            BotUser user = userService.getUserByName(words[1]);
+            return userToString(user);
+        }
+        StringBuilder response = new StringBuilder();
+        List<BotUser> users = userService.getAllUsers();
+        for (int i = 0; i < users.size(); i++){
+            response.append(i + 1).append(". ").append(userToString(users.get(i)));
+        }
+        return response.toString();
+    }
+    private String userToString(BotUser user){
+        return user.getChatId() + " " + user.getName() + " made " + user.getRequestAmount() + " reqs\n";
+    }
+
+    @Lazy
+    @Autowired
+    public void setBotService(BotService botService) {
+        this.botService = botService;
+    }
+}
+</file>
+
+<file path="src/main/java/com/ravani/ravanibot/service/impl/FileDownloaderImpl.java">
+package com.ravani.ravanibot.service.impl;
+
+import com.ravani.ravanibot.bot.RavaniBot;
+import com.ravani.ravanibot.dtos.DownloadedFile;
+import com.ravani.ravanibot.exceptions.BotException;
+import com.ravani.ravanibot.service.FileDownloader;
+import lombok.RequiredArgsConstructor;
+import lombok.SneakyThrows;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Component;
+import org.springframework.web.client.RestTemplate;
+import org.telegram.telegrambots.meta.api.methods.GetFile;
+import org.telegram.telegrambots.meta.api.objects.File;
+import org.telegram.telegrambots.meta.api.objects.Message;
+import org.telegram.telegrambots.meta.bots.AbsSender;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.net.URLConnection;
+
+@Component
+@RequiredArgsConstructor
+public class FileDownloaderImpl implements FileDownloader {
+
+    private final AbsSender sender;
+    private final RestTemplate restTemplate = new RestTemplate();
+    private final RavaniBot ravaniBot;
+
+    @Override
+    public DownloadedFile downloadFile(Message message) {
+        String downloadUrl = getDownloadUrl(message);
+        try {
+            ResponseEntity<byte[]> response = restTemplate.exchange(
+                    downloadUrl,
+                    HttpMethod.GET,
+                    null,
+                    byte[].class
+            );
+            byte[] bytes = response.getBody();
+            if (bytes == null) throw new BotException("Downloaded bytes are null");
+
+            String contentType = URLConnection.guessContentTypeFromStream(new ByteArrayInputStream(bytes));
+            if (contentType == null || contentType.equals("application/octet-stream"))
+                contentType = getContentType(message);
+
+            return DownloadedFile.builder().bytes(bytes).contentType(contentType).build();
+        } catch (IOException e) {
+            throw new BotException("Could not download the file: IOException");
+        }
+    }
+    private String getFieldId(Message message) {
+        String fieldId;
+        if (message.hasPhoto()){
+            fieldId = message.getPhoto().get(message.getPhoto().size() - 1).getFileId();
+        } else if (message.hasDocument()) {
+            fieldId = message.getDocument().getFileId();
+        }else {
+            throw new BotException("Message has no file/document");
+        }
+        return fieldId;
+    }
+    @SneakyThrows
+    private String getDownloadUrl(Message message) {
+        String fieldId = getFieldId(message);
+        GetFile getFile = new GetFile(fieldId);
+        File file = sender.execute(getFile);
+        String filePath = file.getFilePath();
+
+        if (filePath == null || filePath.isBlank()) {
+            throw new BotException("FilePath is null or empty");
+        }
+        String downloadUrl = "https://api.telegram.org/file/bot" + ravaniBot.getBotToken();
+        if (!filePath.startsWith("/")) {
+            downloadUrl += "/";
+        }
+        downloadUrl += filePath;
+        return downloadUrl;
+    }
+    private String getContentType(Message message) {
+        if (message.hasDocument()) {
+            String fileName = message.getDocument().getFileName().toLowerCase();
+            if (fileName.endsWith(".pdf")) return "application/pdf";
+            else if (fileName.endsWith(".jpg") || fileName.endsWith(".jpeg")) return "image/jpeg";
+            else if (fileName.endsWith(".png")) return "image/png";
+            else throw new BotException("Unsupported file type: " + fileName);
+        }
+        throw new BotException("Cannot detect content type.");
+    }
+}
+</file>
+
+<file path="src/main/java/com/ravani/ravanibot/service/impl/GeminiServiceImpl.java">
+package com.ravani.ravanibot.service.impl;
+
+import com.google.genai.Client;
+import com.google.genai.types.*;
+import com.ravani.ravanibot.config.GeminiConfig;
+import com.ravani.ravanibot.constants.GeminiRequests;
+import com.ravani.ravanibot.dtos.DownloadedFile;
+import com.ravani.ravanibot.enums.CountryCode;
+import com.ravani.ravanibot.enums.DocumentType;
+import com.ravani.ravanibot.service.GeminiService;
+import jakarta.annotation.PostConstruct;
+import lombok.RequiredArgsConstructor;
+import lombok.SneakyThrows;
+import org.springframework.stereotype.Service;
+import java.util.ArrayList;
+import java.util.List;
+
+@Service
+@RequiredArgsConstructor
+public class GeminiServiceImpl implements GeminiService {
+
+    private final GeminiConfig geminiConfig;
+    private Client client;
+
+    @PostConstruct
+    public void init() {
+        this.client = Client.builder().apiKey(geminiConfig.getToken()).build();
+    }
+
+    @Override
+    public String sendRequest(List<DownloadedFile> files, DocumentType type, CountryCode countryCode,  Long chatId) {
+        Content content = getContent(files, type, countryCode, chatId);
+        GenerateContentConfig config = getContentConfig();
+        GenerateContentResponse response = client.models.generateContent(
+                geminiConfig.getModel(), content, config
+        );
+        return response.text();
+    }
+    private GenerateContentConfig getContentConfig() {
+        return GenerateContentConfig.builder()
+                .temperature(0f)
+                .responseMimeType("application/json")
+                .build();
+    }
+    @SneakyThrows
+    private Content getContent(List<DownloadedFile> files, DocumentType documentType, CountryCode countryCode,  Long chatId) {
+        List<Part>  parts = new ArrayList<>();
+        files.forEach(file -> parts.add(Part.fromBytes(file.bytes(),  file.contentType())));
+        parts.add(Part.fromText(GeminiRequests.getRequestText(documentType, countryCode, chatId)));
+        return Content.builder()
+                .parts(parts)
+                .build();
+    }
+}
+</file>
+
+<file path="src/main/java/com/ravani/ravanibot/service/GeminiService.java">
+package com.ravani.ravanibot.service;
+
+import com.ravani.ravanibot.dtos.DownloadedFile;
+import com.ravani.ravanibot.enums.CountryCode;
+import com.ravani.ravanibot.enums.DocumentType;
+
+import java.util.List;
+
+public interface GeminiService {
+    String sendRequest(List<DownloadedFile> files, DocumentType documentType, CountryCode countryCode, Long chatId);
+}
+</file>
+
+<file path="pom.xml">
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>3.5.0</version>
+        <relativePath/> <!-- lookup parent from repository -->
+    </parent>
+    <groupId>com.ravani</groupId>
+    <artifactId>ravani-bot</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+    <name>ravani-bot</name>
+    <description>ravani-bot</description>
+    <url/>
+    <licenses>
+        <license/>
+    </licenses>
+    <developers>
+        <developer/>
+    </developers>
+    <scm>
+        <connection/>
+        <developerConnection/>
+        <tag/>
+        <url/>
+    </scm>
+    <properties>
+        <java.version>17</java.version>
+    </properties>
+    <dependencies>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-web</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.telegram</groupId>
+            <artifactId>telegrambots-spring-boot-starter</artifactId>
+            <version>6.9.7.1</version>
+        </dependency>
+        <dependency>
+            <groupId>org.telegram</groupId>
+            <artifactId>telegrambots-abilities</artifactId>
+            <version>6.9.7.1</version>
+        </dependency>
+        <dependency>
+            <groupId>com.google.genai</groupId>
+            <artifactId>google-genai</artifactId>
+            <version>1.0.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.poi</groupId>
+            <artifactId>poi-ooxml</artifactId>
+            <version>5.4.1</version>
+        </dependency>
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <version>2.19.0</version>
+        </dependency>
+        <dependency>
+            <groupId>com.mysql</groupId>
+            <artifactId>mysql-connector-j</artifactId>
+            <version>9.0.0</version>
+        </dependency>
+        <dependency>
+            <groupId>net.sourceforge.tess4j</groupId>
+            <artifactId>tess4j</artifactId>
+            <version>5.14.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.pdfbox</groupId>
+            <artifactId>pdfbox</artifactId>
+            <version>3.0.5</version>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-jpa</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.github.du00cs</groupId>
+            <artifactId>json-repairj</artifactId>
+            <version>0.50.0</version>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <annotationProcessorPaths>
+                        <path>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                        </path>
+                    </annotationProcessorPaths>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration>
+                    <excludes>
+                        <exclude>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                        </exclude>
+                    </excludes>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
+</project>
+</file>
+
+<file path="src/main/java/com/ravani/ravanibot/dtos/PassportDto.java">
+package com.ravani.ravanibot.dtos;
+
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.Getter;
+
+@Getter
+@JsonIgnoreProperties(ignoreUnknown = true)
+public final class PassportDto extends DocumentDto {
+    private final boolean isPassport;
+
+    @JsonCreator
+    public PassportDto(
+            @JsonProperty("isPassport") boolean isPassport,
+            @JsonProperty("country_code") String country_code,
+            @JsonProperty("number") String number,
+            @JsonProperty("issueDate") String issueDate,
+            @JsonProperty("expiryDate") String expiryDate,
+            @JsonProperty("issueAuthority") String issueAuthority,
+            @JsonProperty("place_of_issue")  String place_of_issue,
+            @JsonProperty("issued_by") String issued_by,
+            @JsonProperty("person") PersonDto person
+
+    ) {
+        super(country_code, number, issueDate, expiryDate, issueAuthority, place_of_issue, issued_by, person);
+        this.isPassport = isPassport;
+    }
+
+    @Override
+    public String toString() {
+        return "PassportDto{" +
+                "isPassport=" + isPassport +
+                "} " + super.toString();
+    }
+}
+</file>
+
+<file path="src/main/java/com/ravani/ravanibot/dtos/PersonDto.java">
+package com.ravani.ravanibot.dtos;
+
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonSetter;
+import com.fasterxml.jackson.annotation.Nulls;
+import lombok.Builder;
+
+@Builder
+@JsonIgnoreProperties(ignoreUnknown = true)
+public record PersonDto(
+        @JsonSetter(nulls = Nulls.AS_EMPTY)
+        String surname,
+
+        @JsonSetter(nulls = Nulls.AS_EMPTY)
+        String surname_in_eng,
+
+        @JsonSetter(nulls = Nulls.AS_EMPTY)
+        String name,
+
+        @JsonSetter(nulls = Nulls.AS_EMPTY)
+        String given_names,
+
+        @JsonSetter(nulls = Nulls.AS_EMPTY)
+        String middle_name,
+
+        @JsonSetter(nulls = Nulls.AS_EMPTY)
+        String name_in_eng,
+
+        @JsonSetter(nulls = Nulls.AS_EMPTY)
+        String patronymic,
+
+        @JsonSetter(nulls = Nulls.AS_EMPTY)
+        String patronymic_in_eng,
+
+        @JsonSetter(nulls = Nulls.AS_EMPTY)
+        String birth_date,
+
+        @JsonSetter(nulls = Nulls.AS_EMPTY)
+        String gender,
+
+        @JsonSetter(nulls = Nulls.AS_EMPTY)
+        String birth_place,
+
+        @JsonSetter(nulls = Nulls.AS_EMPTY)
+        String personal_number,
+
+        @JsonSetter(nulls = Nulls.AS_EMPTY)
+        String nationality
+) {}
+</file>
+
+<file path="src/main/java/com/ravani/ravanibot/utils/CountryCodeExtractor.java">
+package com.ravani.ravanibot.utils;
+
+import com.ravani.ravanibot.config.TesseractConfig;
+import com.ravani.ravanibot.constants.ComRes;
+import com.ravani.ravanibot.dtos.DownloadedFile;
+import com.ravani.ravanibot.enums.CountryCode;
+import com.ravani.ravanibot.exceptions.BotException;
+import net.sourceforge.tess4j.Tesseract;
+import net.sourceforge.tess4j.TesseractException;
+import org.apache.pdfbox.Loader;
+import org.apache.pdfbox.io.RandomAccessRead;
+import org.apache.pdfbox.io.RandomAccessReadBuffer;
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.rendering.PDFRenderer;
+import javax.imageio.ImageIO;
+import java.awt.*;
+import java.awt.image.BufferedImage;
+import java.awt.image.RescaleOp;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+public class CountryCodeExtractor {
+    private final Tesseract tesseract;
+
+    private static final Map<String, CountryCode> COUNTRY_NAME_TO_CODE = Map.ofEntries(
+            Map.entry("KYRGYZ", CountryCode.KGZ),
+            Map.entry("ZBEKIS", CountryCode.UZB),
+            Map.entry("TAJIK", CountryCode.TJK),
+            Map.entry("ARMENIA", CountryCode.ARM),
+            Map.entry("AZER", CountryCode.AZE),
+            Map.entry("IND", CountryCode.IND),
+            Map.entry("TURKMEN", CountryCode.TKM),
+            Map.entry("TURKIYE", CountryCode.TUR),
+            Map.entry("KAZAKHSTAN", CountryCode.KAZ),
+            Map.entry("PHILIP", CountryCode.PHL)
+    );
+
+    public CountryCodeExtractor() {
+        this.tesseract = new Tesseract();
+        tesseract.setLanguage("eng");
+        TesseractConfig tesseractConfig = new TesseractConfig();
+        tesseract.setDatapath(tesseractConfig.getDataPath());
+        tesseract.setVariable("user_defined_dpi", "300");
+        tesseract.setVariable("tessedit_char_whitelist", "ABCDEFGHIJKLMNOPQRSTUVWXYZ<");
+        tesseract.setOcrEngineMode(1);
+        tesseract.setPageSegMode(6);
+    }
+    public CountryCode extract(DownloadedFile file) {
+        CountryCode countryCode;
+        try {
+            if (file.contentType().equals("application/pdf"))
+                countryCode =  extractFromPDF(file);
+            else
+                countryCode = extractFromImg(file);
+        }catch (OutOfMemoryError e){
+                throw new BotException( ComRes.TOO_LARGE_FILE);
+        }
+        catch (IOException | TesseractException e) {
+            throw new BotException("Failed to extract country code");
+        }
+        return countryCode;
+    }
+    private CountryCode extractFromPDF(DownloadedFile file) throws IOException, TesseractException {
+        try (
+                RandomAccessRead rar = new RandomAccessReadBuffer(file.bytes());
+                PDDocument doc = Loader.loadPDF(rar)
+        ) {
+            int dpi = getDPI(file.bytes().length);
+            PDFRenderer renderer = new PDFRenderer(doc);
+            BufferedImage image = renderer.renderImageWithDPI(0, dpi);
+            BufferedImage grayImage = toGrayscale(image);
+            BufferedImage contrasted = enhanceContrast(grayImage);
+            String text = tesseract.doOCR(contrasted).toUpperCase();
+            return extractCountryCodeFromText(text);
+        }
+    }
+    private CountryCode extractFromImg(DownloadedFile file) throws IOException, TesseractException {
+        try (ByteArrayInputStream bais = new ByteArrayInputStream(file.bytes())) {
+            BufferedImage image = ImageIO.read(bais);
+            if (image == null) {
+                throw new IOException("Image is null");
+            }
+            BufferedImage grayImage = toGrayscale(image);
+            BufferedImage contrasted = enhanceContrast(grayImage);
+            BufferedImage binarizedImage = binarize(contrasted);
+            String text = tesseract.doOCR(binarizedImage).toUpperCase();
+            return extractCountryCodeFromText(text);
+        }
+    }
+    private BufferedImage toGrayscale(BufferedImage original) {
+        BufferedImage grayscale = new BufferedImage(
+                original.getWidth(),
+                original.getHeight(),
+                BufferedImage.TYPE_BYTE_GRAY
+        );
+        java.awt.Graphics g = grayscale.getGraphics();
+        g.drawImage(original, 0, 0, null);
+        g.dispose();
+        return grayscale;
+    }
+    private BufferedImage enhanceContrast(BufferedImage image) {
+        RescaleOp op = new RescaleOp(2.0f, -50, null); // Brightness factor
+        op.filter(image, image);
+        return image;
+    }
+
+    private BufferedImage binarize(BufferedImage gray) {
+        BufferedImage binary = new BufferedImage(gray.getWidth(), gray.getHeight(), BufferedImage.TYPE_BYTE_BINARY);
+        Graphics2D g = binary.createGraphics();
+        g.drawImage(gray, 0, 0, null);
+        g.dispose();
+        return binary;
+    }
+    private CountryCode extractCountryCodeFromText(String text) {
+        String[] patterns = {
+                "P<([A-Z]{3})",
+                "P([A-Z]{3})",
+                "P.?([A-Z]{2})",
+                "P.{0,3}?([A-Z]{3})"
+        };
+
+        for (String pat : patterns) {
+            Matcher matcher = Pattern.compile(pat).matcher(text);
+            if (matcher.find()) {
+                String code = matcher.group(1);
+                try {
+                    return CountryCode.valueOf(code);
+                } catch (IllegalArgumentException ignored) {}
+            }
+        }
+        if (text.contains("PCAZE")) {
+            return CountryCode.AZE;
+        }
+        if (text.contains("P<TIK") ) {
+            return CountryCode.TJK;
+        }
+        for (Map.Entry<String, CountryCode> entry : COUNTRY_NAME_TO_CODE.entrySet()) {
+            if (text.contains(entry.getKey())) {
+                return entry.getValue();
+            }
+        }
+        return null;
+    }
+    private int getDPI(int fileSizeBytes) {
+        int dpi;
+        if (fileSizeBytes < 100 * 1024) {
+            dpi = 900;
+        } else if (fileSizeBytes < 1024 * 1024) {
+            dpi = 300;
+        } else {
+            dpi = 150;
+        }
+        return dpi;
+    }
+
+}
+</file>
+
+<file path="src/main/java/com/ravani/ravanibot/bot/RavaniBot.java">
+package com.ravani.ravanibot.bot;
+
+import com.ravani.ravanibot.exceptions.BotException;
+import com.ravani.ravanibot.service.BotService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Lazy;
+import org.springframework.stereotype.Component;
+import org.telegram.telegrambots.bots.DefaultBotOptions;
+import org.telegram.telegrambots.meta.api.objects.Update;
+import org.telegram.telegrambots.meta.generics.LongPollingBot;
+import java.net.HttpURLConnection;
+import java.net.URL;
+
+@Component
+public class RavaniBot implements LongPollingBot {
+    private BotService service;
+    private final DefaultBotOptions botOptions;
+
+
+    @Value("${bot.username}")
+    private String botUsername;
+
+    @Value("${bot.token}")
+    private String botToken;
+
+    public RavaniBot() {
+        this.botOptions = new DefaultBotOptions();
+    }
+
+    @Override
+    public void onUpdateReceived(Update update) {
+        if (update.hasMessage()) {
+            try{
+                service.handleMessage(update.getMessage());
+            }
+            catch (Exception e){
+                e.printStackTrace();
+                String exceptionName = e instanceof BotException ? "⚠️: " : e.getClass().getCanonicalName() + "⚙️: ";
+                String fullMessage = exceptionName + e.getMessage();
+                service.sendMessage(update.getMessage().getChatId(),  fullMessage);
+            }
+        }
+    }
+
+    @Override
+    public DefaultBotOptions getOptions() {
+        return this.botOptions;
+    }
+
+    @Override
+    public void clearWebhook() {
+        try {
+            URL url = new URL("https://api.telegram.org/bot" + getBotToken() + "/deleteWebhook");
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            connection.setRequestMethod("GET");
+            int responseCode = connection.getResponseCode();
+            System.out.println("Webhook clear response: " + responseCode);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    public String getBotUsername() {
+        return botUsername;
+    }
+
+    @Override
+    public String getBotToken() {
+        return botToken;
+    }
+
+    @Autowired
+    @Lazy
+    public void setService(BotService service) {
+        this.service = service;
+    }
+
+}
+</file>
+
+<file path="src/main/java/com/ravani/ravanibot/constants/ComRes.java">
+package com.ravani.ravanibot.constants;
+
+import com.ravani.ravanibot.enums.DocumentType;
+
+public class ComRes {
+
+    public static final String ADD = "add";
+    public static final String REMOVE = "remove";
+    public static final String INFO = "info";
+    public static final String RESET = "reset";
+    public static final String MANUAL = "man";
+
+    public static final String MANUAL_COMMAND_RESPONSE =
+            INFO + " returns info about all users.\n\n"
+                    + INFO + " <name> args to get specific user's info\n\n"
+                    + ADD + " <chatId> and <name>.\n\n"
+                    + REMOVE + " <name>.\n\n"
+                    + RESET + " <name>.\n\n"
+                    + "version 2.4.01";
+
+    public static final String INVALID_COMMAND = "Invalid command⚠️";
+    public static final String NO_COMMAND_FOUND = "Hello, boss🫡";
+    public static final String POSITIVE_RESPONSE = "✅";
+
+    public static final String UNKNOWN_USER = "Hi, сообщите моему владельцу @asadaravani, чтобы получить доступ к моему сервису.\n"
+            + "Передайте ему наш chat ID: ";
+    public static final String MODE_CHANGE_RESPONSE = "🔄Режим перевода: ";
+    public static final String NEW_USER_GREETING = "👋🏼Привет! Я бот-переводчик\n"
+            + "Вы можете отправлять JPG, JPEG, PDF и другие файлы.\n"
+            + "Пожалуйста, отправляйте файлы без лишних страниц и ненужных данных, чтобы получить ответ быстрее.\n"
+            + "⚠️Админ видит, сколько запросов вы отправляли.";
+
+    private static final String INVALID_DOCUMENT = "!. Не тратьте наши ресурсы впустую.";
+    public static String getInvalidDocumentResponse(DocumentType documentType) {
+        return "😡 Это не " + documentType.toString() + INVALID_DOCUMENT;
+    }
+    public static String TOO_LARGE_FILE = "😭Файл слишком большой, вы можете сделать скриншот и отправить снова.\n Главное — чтобы были видны все буквы, даже маленькие🫰";
+    public static String BAD_QUALITY_FILE = "Качество 👎🏻  или перевёрнутый скан.";
+}
+</file>
+
+<file path="deploy.sh">
+#!/bin/bash
+
+set -e
+
+echo "Pulling latest changes..."
+git reset --hard HEAD && git pull origin main
+
+echo "Building the application..."
+./mvnw clean install -DskipTests
+
+echo "Restarting the systemd service..."
+sudo systemctl daemon-reload
+sudo systemctl restart ravani-bot
+
+echo "✅app deployed and restarted via systemd✅"
+</file>
+
+<file path="src/main/java/com/ravani/ravanibot/config/GeminiConfig.java">
+package com.ravani.ravanibot.config;
+
+import lombok.Getter;
+import lombok.Setter;
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.stereotype.Component;
+
+@Component
+@ConfigurationProperties(prefix = "gemini")
+@Getter
+@Setter
+public class GeminiConfig {
+    private String model;
+    private String token;
+
+}
+</file>
+
+<file path="src/main/java/com/ravani/ravanibot/dtos/DocumentDto.java">
+package com.ravani.ravanibot.dtos;
+
+import com.fasterxml.jackson.annotation.JsonSetter;
+import com.fasterxml.jackson.annotation.Nulls;
+import lombok.Getter;
+
+@Getter
+public sealed abstract class DocumentDto permits PassportDto, DriverLicenseDto{
+
+    @JsonSetter(nulls = Nulls.AS_EMPTY)
+    private final String country_code;
+
+    @JsonSetter(nulls = Nulls.AS_EMPTY)
+    private final String number;
+
+    @JsonSetter(nulls = Nulls.AS_EMPTY)
+    private final String issueDate;
+
+    @JsonSetter(nulls = Nulls.AS_EMPTY)
+    private final String expiryDate;
+
+    @JsonSetter(nulls = Nulls.AS_EMPTY)
+    private final String issueAuthority;
+
+    @JsonSetter(nulls = Nulls.AS_EMPTY)
+    private final String place_of_issue;
+
+    @JsonSetter(nulls = Nulls.AS_EMPTY)
+    private final String issued_by;
+
+    private final PersonDto person;
+
+    public DocumentDto(String country_code, String number, String issueDate, String expiryDate, String issueAuthority, String place_of_issue, String issued_by, PersonDto person) {
+        this.country_code = validateField(country_code);
+        this.number = validateField(number);
+        this.issueDate = validateField(issueDate);
+        this.expiryDate = validateField(expiryDate);
+        this.issueAuthority = validateField(issueAuthority);
+        this.place_of_issue = validateField(place_of_issue);
+        this.issued_by = validateField(issued_by);
+        this.person = person;
+    }
+
+    public PersonDto getPerson() {
+        return new PersonDto.PersonDtoBuilder()
+                .surname(validateField(person.surname()))
+                .surname_in_eng(validateField(person.surname_in_eng()))
+                .name(validateField(person.name()))
+                .name_in_eng(validateField(person.name_in_eng()))
+                .given_names(validateField(person.given_names()))
+                .middle_name(validateField(person.middle_name()))
+                .patronymic(validateField(person.patronymic()))
+                .patronymic_in_eng(validateField(person.patronymic_in_eng()))
+                .birth_date(validateField(person.birth_date()))
+                .gender(validateField(person.gender()))
+                .birth_place(validateField(person.birth_place()))
+                .personal_number(validateField(person.personal_number()))
+                .nationality(validateField(person.nationality()))
+                .build();
+    }
+
+    protected String validateField(String field) {
+        return field == null ? "" : field.toUpperCase();
+    }
+    public boolean isDocument(){
+        DocumentDto dto = this;
+        if (dto instanceof PassportDto) {
+            return ((PassportDto) dto).isPassport();
+        }
+        else if (dto instanceof DriverLicenseDto) {
+            return ((DriverLicenseDto) dto).isDriverLicense();
+        }
+        return false;
+    }
+
+    @Override
+    public String toString() {
+        return "DocumentDto{" +
+                "country_code='" + country_code + '\'' +
+                ", number='" + number + '\'' +
+                ", issueDate='" + issueDate + '\'' +
+                ", expiryDate='" + expiryDate + '\'' +
+                ", issueAuthority='" + issueAuthority + '\'' +
+                ", place_of_issue='" + place_of_issue + '\'' +
+                ", issued_by='" + issued_by + '\'' +
+                ", person=" + person +
+                '}';
+    }
+}
+</file>
+
+<file path="src/main/java/com/ravani/ravanibot/service/impl/DocumentServiceImpl.java">
+package com.ravani.ravanibot.service.impl;
+
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.ravani.ravanibot.dtos.DocumentDto;
+import com.ravani.ravanibot.dtos.DriverLicenseDto;
+import com.ravani.ravanibot.dtos.PassportDto;
+import com.ravani.ravanibot.enums.CountryCode;
+import com.ravani.ravanibot.enums.DocumentType;
+import com.ravani.ravanibot.exceptions.BotException;
+import com.ravani.ravanibot.service.DocumentService;
+import org.apache.poi.xwpf.usermodel.*;
+import org.jsonrepairj.JsonRepair;
+import org.springframework.stereotype.Component;
+import java.io.InputStream;
+import java.util.List;
+import java.util.Map;
+
+import static org.jsonrepairj.Json.MAPPER;
+
+@Component
+public class DocumentServiceImpl implements DocumentService {
+
+    @Override
+    public XWPFDocument fillWordDocument(Long chatId, DocumentDto dto) {
+        CountryCode country = detectCountry(dto.getCountry_code());
+        return dto instanceof PassportDto ? PassportDocGenerator.execute(country, (PassportDto) dto, chatId)
+                : DriverLicenseDocGenerator.execute(country, (DriverLicenseDto) dto, chatId);
+    }
+
+    @Override
+    public DocumentDto mapToDocumentDto(String response, DocumentType type) {
+        try {
+            JsonNode node;
+
+            try {
+                node = MAPPER.readTree(response);
+            } catch (Exception e) {
+                response = JsonRepair.repairJson(response);
+                node = MAPPER.readTree(response);
+            }
+
+            if (type == DocumentType.PASSPORT) {
+
+                if (node.isArray()) {
+                    List<PassportDto> documents =
+                            MAPPER.convertValue(node, new TypeReference<List<PassportDto>>() {});
+
+                    return documents.stream()
+                            .filter(DocumentDto::isDocument)
+                            .findFirst()
+                            .orElse(documents.get(0));
+                }
+
+                return MAPPER.treeToValue(node, PassportDto.class);
+            }
+
+            return MAPPER.treeToValue(node, DriverLicenseDto.class);
+
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to parse document JSON", e);
+        }
+    }
+
+    static XWPFDocument loadFile(String filePath) {
+        try (InputStream templateStream = DocumentServiceImpl.class.getClassLoader().getResourceAsStream(filePath)){
+            if (templateStream == null)
+                throw new BotException( "❌File from 📁resources is null" );
+            return new XWPFDocument(templateStream);
+        }catch (Exception e){
+            throw new BotException("❌Cannot load file from 📁resources");
+        }
+    }
+    static void replaceField(List<XWPFParagraph> paragraphs, Map<String, String> values) {
+        paragraphs.forEach(paragraph ->
+                paragraph.getRuns().forEach(run -> {
+                    String text = run.getText(0);
+                    if (text != null) {
+                        for (Map.Entry<String, String> entry : values.entrySet()) {
+                            if (text.contains(entry.getKey())) {
+                                run.setText(text.replace(entry.getKey(), entry.getValue()), 0);
+                            }
+                        }
+                    }
+                })
+        );
+    }
+    static void replaceFieldInLayer(XWPFDocument doc, Map<String, String> values) {
+        doc.getTables().forEach(table -> {
+            replaceFieldInTables(table, values);
+        });
+    }
+    static void replaceFieldInTables(XWPFTable table, Map<String, String> values) {
+        table.getRows().forEach(row -> {
+            row.getTableCells().forEach(tableCell -> {
+                replaceField(tableCell.getParagraphs(), values);
+
+                tableCell.getTables().forEach(nestedTable -> {
+                    replaceFieldInTables(nestedTable, values);
+                });
+            });
+        });
+    }
+    private CountryCode detectCountry(String country_code) {
+        CountryCode country;
+        switch (country_code) {
+            case "KGZ" -> country = CountryCode.KGZ;
+            case "UZB" -> country = CountryCode.UZB;
+            case "TJK" -> country = CountryCode.TJK;
+            case "KAZ" -> country = CountryCode.KAZ;
+            case "TKM" -> country = CountryCode.TKM;
+            case "AZE" -> country = CountryCode.AZE;
+            case "ARM" -> country = CountryCode.ARM;
+            case "TUR" -> country = CountryCode.TUR;
+            case "IND" -> country = CountryCode.IND;
+            case "PHL" -> country = CountryCode.PHL;
+            default ->
+                    throw new BotException("❌Паспорт " + country_code + " не поддерживается");
+        }
+        return country;
+    }
+}
+</file>
+
+<file path="src/main/java/com/ravani/ravanibot/constants/GeminiRequests.java">
+package com.ravani.ravanibot.constants;
+
+import com.ravani.ravanibot.enums.CountryCode;
+import com.ravani.ravanibot.enums.DocumentType;
+import com.ravani.ravanibot.exceptions.BotException;
+
+import java.util.Objects;
+
+public class GeminiRequests {
+    private static final String undetectedCountry = """
+You are an expert in document analysis and sworn translation.
+
+Task:
+- Extract all relevant data from the provided passport image or scan.
+- Translate all necessary fields from the original language (which may be English or the official language of any country) into proper formal Russian, suitable for sworn translation.
+- Normalize and standardize terms as a sworn translator would do, even if the original text is already in Cyrillic.
+- Convert all dates to format: DD.MM.YYYY.
+- Gender will be Ж or М. Translate birth place into russian
+- Return English version of issue authority.
+
+Rules:
+- Output only a valid JSON object, matching the structure below.
+- Do NOT include any explanations, comments, or additional formatting.
+- All text must be translated into Russian, except numbers, document codes, and dates and issueAuthority.
+- If a field is missing or not found, set its value to null (not "...").
+- Only in Uzbek passport names, translate the letter J as Ж, not ДЖ.
+
+JSON output format:
+{
+  "isPassport": true,
+  "country_code": "UZB",
+  "number": "FA1234567",
+  "issueDate": "01.01.2020",
+  "expiryDate": "01.01.2030",
+  "issueAuthority": "MIA 213031",
+  "person": {
+    "surname": "СЕРГЕЕВ",
+    "name": "ВЛАДИСЛАВ",
+    "patronymic": "АЛЕКСАНДРОВИЧ",
+    "birth_date": "31.06.2003",
+    "gender": "М",
+    "birth_place": "КЫРГЫЗСКАЯ РЕСПУБЛИКА",
+    "personal_number": "21004500200010"
+    "nationality": "УЗБЕК",
+  }
+}
+""";
+    private static final String PHL_PASSPORT = """
+You are an expert in document analysis and sworn translation.
+
+Task:
+- Extract all relevant data from the provided passport image or scan.
+- Translate all fields into proper formal Russian, suitable for sworn translation.
+- Convert all dates to format: DD.MM.YYYY.
+- Gender will be Ж or М.
+- Translate issue authority properly. "DFA" translates as ДЕПАРТАМЕНТ ИНОСТРАННЫХ ДЕЛ".
+- Do not leave any field without translation!
+
+Rules:
+- Output only a valid JSON object, matching the structure below.
+- Do NOT include any explanations, comments, or additional formatting.
+- All text must be translated into Russian, except numbers, document codes, and dates.
+- If a field is missing or not found, set its value to null (not "...").
+
+JSON output format:
+{
+  "isPassport": true,
+  "country_code": "PHL",
+  "number": "P1234567A",
+  "issueDate": "01.01.2020",
+  "expiryDate": "01.01.2030",
+  "issueAuthority": "ДЕПАРТАМЕНТ ИНОСТРАННЫХ ДЕЛ МАНИЛА",
+  "person": {
+    "surname": "ДЕЛА КРУЗ",
+    "given_names": "МАРИА",
+    "middle_name": "САНТОС",
+    "birth_date": "31.06.2003",
+    "gender": "Ж",
+    "birth_place": "МАНИЛА",
+  }
+}
+""";
+
+    private static final String KGZ_PASSPORT_ASHIM = """
+You are an expert in document analysis and sworn translation.
+
+Task:
+- Extract all relevant data from the provided passport image or scan.
+- Translate all necessary fields from the original language (which may be English or the official language of any country) into proper formal Russian, suitable for sworn translation.
+- Normalize and standardize terms as a sworn translator would do, even if the original text is already in Cyrillic.
+- Convert all dates to format: DD.MM.YYYY.
+- Gender will be Ж or М. Translate birth place into russian
+- In fields surname_in_eng, name_in_eng, patronymic_in_eng return version of names.
+- The mrz_second_line field should contain the complete second line of the MRZ
+- Return English version of issue authority.
+
+Rules:
+- Output only a valid JSON object, matching the structure below.
+- Do NOT include any explanations, comments, or additional formatting.
+- All text must be translated into Russian, except numbers, document codes, and dates and issueAuthority.
+- If a field is missing or not found, set its value to null (not "...").
+
+JSON output format:
+{
+  "isPassport": true,
+  "country_code": "KGZ",
+  "number": "PE1234567",
+  "issueDate": "01.01.2020",
+  "expiryDate": "01.01.2030",
+  "issueAuthority": "MIA 213031",
+  "person": {
+    "surname": "СЕРГЕЕВ",
+    "surname_in_eng": "SERGEEV",
+    "name": "ВЛАДИСЛАВ",
+    "name_in_eng": "VLADISLAV",
+    "patronymic": "АЛЕКСАНДРОВИЧ",
+    "patronymic_in_eng": "ALEKSANDROVICH",
+    "birth_date": "31.06.2003",
+    "gender": "М",
+    "birth_place": "КЫРГЫЗСКАЯ РЕСПУБЛИКА",
+    "personal_number": "21004500200010"
+  }
+}
+""";
+
+    private static final String AZE_PASSPORT = """
+You are an expert in document analysis and sworn translation from Azerbaijani into Russian.
+
+Task:
+- Extract all relevant data from the provided passport image or scan.
+- Translate all necessary fields from Azerbaijani and English language into proper formal Russian, suitable for sworn translation.
+- Convert all dates to format: DD.MM.YYYY.
+- Gender will be Ж or М.
+- Translate Azerbaijani letters into Russian properly.
+- Return birthplace without its country code.
+
+Rules:
+- Output only a valid JSON object, matching the structure below.
+- Do NOT include any explanations, comments, or additional formatting.
+- All text must be translated into Russian, except numbers, document codes, and dates.
+- If a field is missing or not found, set its value to null (not "...").
+
+JSON output format:
+{
+  "isPassport": true,
+  "country_code": "AZE",
+  "number": "C1234567",
+  "issueDate": "01.01.2020",
+  "expiryDate": "01.01.2030",
+  "issueAuthority": "МИНИСТЕРСТВО ВНУТРЕННИХ ДЕЛ",
+  "person": {
+    "surname": "АСАДОВ",
+    "name": "ИЛХАМ",
+    "patronymic": "МУХСИН ОГЛУ",
+    "birth_date": "31.06.2003",
+    "gender": "М",
+    "birth_place": "АЗЕРБАЙДЖАН",
+    "personal_number": "0X1232X"
+  }
+}
+""";
+    private static final String TJK_PASSPORT = """
+You are an expert in document analysis and sworn translation from Tajik and English into Russian.
+
+Task:
+- Extract all relevant data from the provided passport image or scan.
+- Translate all necessary fields from Tajik and English into proper formal Russian, suitable for sworn translation.
+- Ҷ letter will be ДЖ.
+- Convert all dates to format: DD.MM.YYYY.
+- Gender will be Ж or М.
+- issue authority from Tajik to Russian: ШВКД -> ОМВД; ХШБ -> ПРС; ВКД -> МВД; ШММ -> КУС;
+
+Rules:
+- Output only a valid JSON object, matching the structure below.
+- Do NOT include any explanations, comments, or additional formatting.
+- All text must be translated into Russian, except numbers, document codes, and dates.
+- If a field is missing or not found, set its value to null (not "...").
+
+JSON output format:
+{
+  "isPassport": true,
+  "country_code": "TJK",
+  "number": "401234567",
+  "issueDate": "01.01.2020",
+  "expiryDate": "01.01.2030",
+  "issueAuthority": "ОМВД по г. Бустон",
+  "person": {
+    "surname": "ОДИЛОВ",
+    "name": "ДЖАВОХИР",
+    "patronymic": "ОДИЛДЖОНОВИЧ",
+    "birth_date": "31.06.2003",
+    "gender": "М"
+  }
+}
+""";
+    private static final String TKM_PASSPORT = """
+You are an expert in document analysis and sworn translation from Turkmen into Russian.
+
+Task:
+- Extract all relevant data from the provided passport image or scan.
+- Translate all necessary fields from Turkmen and English language into proper formal Russian, suitable for sworn translation.
+- Convert all dates to format: DD.MM.YYYY.
+-Translate Turkmen letters into Russian properly.
+- Gender will be Ж or М.
+- Convert country code in birth_place into proper Russian, like TKM -> ТУРКМЕНИСТАН
+- Return English version of issue authority.
+
+Rules:
+- Output only a valid JSON object, matching the structure below.
+- Do NOT include any explanations, comments, or additional formatting.
+- All text must be translated into Russian, except numbers, document codes, and dates.
+- If a field is missing or not found, set its value to null (not "...").
+
+JSON output format:
+{
+  "isPassport": true,
+  "country_code": "TKM",
+  "number": "A1234567",
+  "issueDate": "01.01.2020",
+  "expiryDate": "01.01.2030",
+  "issueAuthority": "SMST",
+  "person": {
+    "surname": "ГЕЛЬДИЕВ",
+    "name": "ХЕМРА",
+    "patronymic": "АЛЕКСАНДРОВИЧ",
+    "birth_date": "31.06.2003",
+    "gender": "М",
+    "birth_place": "ТУРКМЕНИСТАН",
+    "personal_number": "DB50020010"
+  }
+}
+""";
+    private static final String IND_PASSPORT = """
+You are an expert in document analysis and sworn translation.
+
+Task:
+- Extract all relevant data from the provided passport image or scan.
+- Translate all necessary fields from English into proper formal Russian, suitable for sworn translation.
+- Convert all dates to format: DD.MM.YYYY.
+- Gender will be Ж or М.
+- If the place of issue is unrecognizable, try to infer from context, bot not leave empty.
+- Do not leave any field without translation.
+
+Rules:
+- Output only a valid JSON object, matching the structure below.
+- Do NOT include any explanations, comments, or additional formatting.
+- All text must be translated into Russian, except numbers, document codes, and dates.
+- If a field is missing or not found, set its value to null (not "...").
+
+JSON output format:
+{
+  "isPassport": true,
+  "country_code": "IND",
+  "number": "W1234567",
+  "issueDate": "01.01.2020",
+  "expiryDate": "01.01.2030",
+  "place_of_issue": "ВИСАКХАПАТНАМ",
+  "person": {
+    "surname": "ГУДИЯ",
+    "name": "САНКАРУ",
+    "birth_date": "31.06.2003",
+    "gender": "М",
+    "birth_place": "КОТТА КОДЖИРИЯ, АНДХРА-ПРАДЕШ",
+  }
+}
+""";
+    private static final String TUR_PASSPORT = """
+You are an expert in document analysis and sworn translation from Turkish into Russian.
+
+Task:
+- Extract all relevant data from the provided passport image or scan.
+- Translate all necessary fields from Turkish into proper formal Russian, suitable for sworn translation.
+- Convert all dates to format: DD.MM.YYYY.
+- Gender will be Ж or М.
+- Translate turkish letters into russian properly.
+- Translate issued_by field properly.
+
+Rules:
+- Output only a valid JSON object, matching the structure below.
+- Do NOT include any explanations, comments, or additional formatting.
+- All text must be translated into Russian, except numbers, document codes, and dates.
+- If a field is missing or not found, set its value to null (not "...").
+- If the personal number (11 digits) is not readable elsewhere, extract it from the second MRZ line, characters 29–39.
+
+JSON output format:
+{
+  "isPassport": true,
+  "country_code": "TUR",
+  "number": "U1234567",
+  "issueDate": "01.01.2020",
+  "expiryDate": "01.01.2030",
+  "issued_by": "АНКАРА",
+  "person": {
+    "surname": "САДЫК",
+    "name": "ЙЫЛМАЗ",
+    "birth_date": "31.06.2003",
+    "gender": "М",
+    "birth_place": "ДОГАНХИСАР",
+    "personal_number": "12345678901"
+  }
+}
+""";
+
+
+
+    public static String getRequestText(DocumentType mode, CountryCode countryCode,  Long chatId) {
+        if (countryCode == null) {
+            return undetectedCountry;
+        }
+        if (Objects.equals(chatId, SpecialUserDetails.ASHIM_CHAT_ID) && countryCode == CountryCode.KGZ)
+            return KGZ_PASSPORT_ASHIM;
+        if(mode == DocumentType.DRIVER_LICENSE) {
+            throw new BotException("этот сервис еще не готов)");
+        }
+        String ret;
+        switch (countryCode) {
+            case AZE -> ret = AZE_PASSPORT;
+            case TJK -> ret = TJK_PASSPORT;
+            case IND -> ret = IND_PASSPORT;
+            case TUR -> ret = TUR_PASSPORT;
+            case TKM -> ret = TKM_PASSPORT;
+            case PHL -> ret = PHL_PASSPORT;
+            default -> ret = undetectedCountry;
+        }
+        return ret;
+    }
+}
+</file>
+
+<file path="src/main/java/com/ravani/ravanibot/service/impl/BotServiceImpl.java">
+package com.ravani.ravanibot.service.impl;
+
+import com.ravani.ravanibot.constants.ComRes;
+import com.ravani.ravanibot.constants.SpecialUserDetails;
+import com.ravani.ravanibot.dtos.DocumentDto;
+import com.ravani.ravanibot.dtos.DownloadedFile;
+import com.ravani.ravanibot.dtos.PersonDto;
+import com.ravani.ravanibot.entities.BotUser;
+import com.ravani.ravanibot.enums.CountryCode;
+import com.ravani.ravanibot.enums.DocumentType;
+import com.ravani.ravanibot.exceptions.BotException;
+import com.ravani.ravanibot.service.*;
+import com.ravani.ravanibot.utils.CountryCodeExtractor;
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
+import lombok.SneakyThrows;
+import lombok.experimental.FieldDefaults;
+import org.apache.poi.xwpf.usermodel.XWPFDocument;
+import org.springframework.stereotype.Service;
+import org.telegram.telegrambots.meta.api.methods.send.SendDocument;
+import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import org.telegram.telegrambots.meta.api.objects.InputFile;
+import org.telegram.telegrambots.meta.api.objects.Message;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
+
+@Service
+@RequiredArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE,  makeFinal = true)
+public class BotServiceImpl implements BotService {
+
+    CommandService commandService;
+    GeminiService geminiService;
+    TelegramSender sender;
+    FileDownloader downloader;
+    DocumentService documentService;
+    Long ownerId = SpecialUserDetails.OWNER_CHAT_ID;
+    Integer WAITING_TIME_MILLIS = 5000;
+    UserService userService;
+    Map<Long, List<DownloadedFile>> tempFiles = new ConcurrentHashMap<>();
+    Map<Long, Boolean> isWaiting = new ConcurrentHashMap<>();
+    CountryCodeExtractor countryCodeExtractor = new CountryCodeExtractor();
+
+    @Override
+    public void handleMessage(Message message) {
+        if (message.hasText() && message.getChatId().equals(ownerId)) {
+            sendMessageToOwner(commandService.generate(message.getText()));
+            return;
+        }
+        boolean doesUserExist = userService.doesUserExist(message.getChatId());
+        if (!doesUserExist) {
+            sendMessage(message.getChatId(), ComRes.UNKNOWN_USER + message.getChatId());
+            return;
+        }
+        if ((message.hasDocument() || message.hasPhoto())) {
+            handleMedia(message);
+        }
+    }
+
+    private void sendFile(Long chatId, XWPFDocument document, String fileName, String caption) {
+        try(ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+            document.write(out);
+            document.close();
+
+            InputStream inputStream = new ByteArrayInputStream(out.toByteArray());
+            SendDocument sendDocument = new SendDocument();
+            sendDocument.setChatId(chatId.toString());
+            sendDocument.setDocument(new InputFile(inputStream, fileName));
+            if (caption != null)
+                sendDocument.setCaption(caption);
+            sender.execute(sendDocument);
+        } catch (Exception e) {
+            throw new BotException("Не удалось отправить файл. Повторите попытку или обратитесь к админу.");
+        }
+    }
+    @Override
+    public void sendMessage(Long chatId, String message){
+        try {
+            SendMessage sendMessage = new SendMessage();
+            sendMessage.setChatId(chatId);
+            sendMessage.setText(message);
+            sender.execute(sendMessage);
+        } catch (Exception e) {
+            sendMessage(SpecialUserDetails.OWNER_CHAT_ID, e.getClass().getCanonicalName() + ": " + e.getMessage());
+        }
+    }
+    @Override
+    public void sendMessageToOwner(String message){
+        sendMessage(ownerId, message);
+    }
+    @SneakyThrows
+    private void handleMedia(Message message){
+        Long chatId = message.getChatId();
+        BotUser user = userService.getUserByChatId(chatId);
+        DocumentType type = user.getDocumentType();
+        DownloadedFile file = downloader.downloadFile(message);
+        if (type == DocumentType.PASSPORT) {
+            processFile(chatId, List.of(file), type);
+            return;
+        }
+        tempFiles.putIfAbsent(chatId, new ArrayList<>());
+        List<DownloadedFile> filesList = tempFiles.get(chatId);
+        filesList.add(file);
+        if (filesList.size() >= 2) {
+            processFile(chatId, filesList.subList(0, 2), type);
+            filesList.subList(0, 2).clear();
+            return;
+        }
+        if (Boolean.TRUE.equals(isWaiting.get(chatId))) return;
+
+        isWaiting.put(chatId, true);
+        new Thread(() -> {
+            try {
+                Thread.sleep(WAITING_TIME_MILLIS);
+                List<DownloadedFile> currentFiles = tempFiles.get(chatId);
+                if (currentFiles.size() == 1) {
+                    processFile(chatId, List.of(currentFiles.get(0)), type);
+                    currentFiles.clear();
+                }
+            } catch (InterruptedException ignored) {
+            } finally {
+                isWaiting.put(chatId, false);
+            }
+        }).start();
+    }
+    private void processFile(Long chatId, List<DownloadedFile> files, DocumentType type) {
+        CountryCode preCountryCode = countryCodeExtractor.extract(files.get(0));
+        String response = geminiService.sendRequest(files, type,  preCountryCode, chatId);
+        DocumentDto dto = documentService.mapToDocumentDto(response, type);
+        if(!dto.isDocument())
+            throw new BotException(ComRes.getInvalidDocumentResponse(type));
+        XWPFDocument xwpfDocument = documentService.fillWordDocument(chatId, dto);
+        String captionForWordFile = preCountryCode == null ? ComRes.BAD_QUALITY_FILE : preCountryCode.toString();
+        sendFile(chatId, xwpfDocument, getFileName(chatId, dto.getPerson()), captionForWordFile);
+        userService.requestAmountPlusPlus(chatId);
+    }
+    private String getFileName(Long chatId, PersonDto dto) {
+        if(Objects.equals(chatId, SpecialUserDetails.BEMA_CHAT_ID))
+            return dto.surname() + ".docx";
+        String name = dto.name().isEmpty() ? dto.given_names() : dto.name();
+        String surname = dto.surname().isEmpty() ? "" : dto.surname();
+        String patronymic = dto.patronymic().isEmpty() ? dto.middle_name() : dto.patronymic();
+        return surname + " " + name + " " + patronymic + ".docx";
+    }
+
+}
+</file>
+
+<file path="src/main/java/com/ravani/ravanibot/service/impl/PassportDocGenerator.java">
+package com.ravani.ravanibot.service.impl;
+
+import com.ravani.ravanibot.constants.SpecialUserDetails;
+import com.ravani.ravanibot.dtos.PassportDto;
+import com.ravani.ravanibot.dtos.PersonDto;
+import com.ravani.ravanibot.enums.CountryCode;
+import com.ravani.ravanibot.exceptions.BotException;
+import com.ravani.ravanibot.utils.DocumentMRZGenerator;
+import org.apache.poi.xwpf.usermodel.XWPFDocument;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
+import static com.ravani.ravanibot.service.impl.DocumentServiceImpl.*;
+
+public class PassportDocGenerator {
+
+    static XWPFDocument execute(CountryCode country, PassportDto passportDto, Long chatId) {
+        Map<String, String> fields;
+        XWPFDocument document;
+        if (Objects.equals(chatId, SpecialUserDetails.GULMIRA_CHAT_ID) ||  Objects.equals(chatId, SpecialUserDetails.GULMIRA_2_CHAT_ID)) {
+            return gulmiraExecute(country, passportDto);
+        }
+        else if (Objects.equals(chatId, SpecialUserDetails.ASHIM_CHAT_ID)) {
+            try {
+                return ashimExecute(country, passportDto);
+            }catch (BotException e) {
+                return gulmiraExecute(country, passportDto);
+            }
+        }
+        else if (Objects.equals(chatId, SpecialUserDetails.KAIRAT_CHAT_ID)) {
+            return kairatExecute(country, passportDto);
+        }
+        switch (country) {
+            case UZB -> {
+                document = loadFile("bema/uzb_passport.docx");
+                fields = mapFieldsUzbNew(passportDto);
+                replaceFieldInLayer(document, fields);
+                return document;
+            }
+            case ARM -> {
+                document = loadFile("bema/arm_passport.docx");
+                fields = mapFieldsArm(passportDto);
+                replaceFieldInLayer(document, fields);
+                return document;
+            }
+            case KGZ -> {
+                if (passportDto.getNumber().contains("AC")) {
+                    document = loadFile("bema/kgz_passport_old.docx");
+                    fields = mapFieldsKgzOld(passportDto);
+                    break;
+                }
+                document = loadFile("bema/kgz_passport_new.docx");
+                fields = mapFieldsKgzNew(passportDto);
+            }
+            case TJK -> {
+                document = loadFile("bema/tjk_passport.docx");
+                fields = mapFieldsTjk(passportDto);
+            }
+            case AZE ->  {
+                document = loadFile("bema/aze_passport.docx");
+                fields = mapFieldsAze(passportDto);
+            }
+            default -> throw new BotException("Только паспорта UZB, ARM, KGZ, TJK, AZE");
+        }
+        replaceField(document.getParagraphs(), fields);
+        return document;
+    }
+    private static XWPFDocument kairatExecute(CountryCode country, PassportDto passportDto) {
+        Map<String, String> fields;
+        XWPFDocument document;
+        switch (country) {
+            case UZB -> {
+                if (passportDto.getNumber().startsWith("A"))
+                    throw new BotException("AC пока нет");
+                document = loadFile("kairat/uzb_passport_new.docx");
+                fields = mapFieldsUzbNew(passportDto);
+            }
+            case TKM -> {
+                document = loadFile("kairat/tkm_passport.docx");
+                fields = mapFieldsKgzOld(passportDto);
+            }
+            case TUR -> {
+                document = loadFile("kairat/tur_passport.docx");
+                fields = mapFieldsTur(passportDto);
+            }
+            case AZE ->  {
+                document = loadFile("kairat/aze_passport.docx");
+                fields = mapFieldsAzeGul(passportDto);
+            }
+            case KAZ -> {
+                document =  loadFile("kairat/kaz_passport.docx");
+                fields = mapFieldsKgzNew(passportDto);
+            }
+            case KGZ -> {
+                if (passportDto.getNumber().startsWith("A")) {
+                    document = loadFile("kairat/kgz_passport_old.docx");
+                    fields = mapFieldsKgzOldAshim(passportDto);
+                    break;
+                }
+                else if (passportDto.getNumber().startsWith("KP"))
+                    document = loadFile("kairat/kgz_passport_newest.docx");
+                else if (passportDto.getNumber().contains("PD"))
+                    document = loadFile("kairat/kgz_passport_dip.docx");
+                else
+                    document =  loadFile("kairat/kgz_passport_new.docx");
+                fields = mapFieldsKgzNewKairat(passportDto);
+            }
+            default -> throw new BotException("Только паспорта UZB, TUR, TKM, AZE, KAZ, KGZ");
+        }
+        replaceField(document.getParagraphs(), fields);
+        replaceFieldInLayer(document, fields);
+        return document;
+    }
+    private static XWPFDocument gulmiraExecute(CountryCode country, PassportDto passportDto) {
+        Map<String, String> fields;
+        XWPFDocument document;
+        switch (country) {
+            case UZB -> {
+                if (passportDto.getNumber().startsWith("A")) {
+                    document = loadFile("gulmira/uzb_passport_old.docx");
+                    fields = mapFieldsUzbOld(passportDto);
+                    break;
+                }
+                document = loadFile("gulmira/uzb_passport_new.docx");
+                fields = mapFieldsUzbNew(passportDto);
+            }
+            case IND -> {
+                document = loadFile("gulmira/ind_passport.docx");
+                fields = mapFieldsInd(passportDto);
+            }
+            case TKM -> {
+                document = loadFile("gulmira/tkm_passport.docx");
+                fields = mapFieldsKgzOld(passportDto);
+            }
+            case TUR -> {
+                String gen = detectTurkishPassGen(passportDto.getIssueDate(), passportDto.getIssued_by());
+                document = loadFile("gulmira/tur_passport_" +  gen + ".docx");
+                fields = mapFieldsTur(passportDto);
+            }
+            case AZE ->  {
+                document = loadFile("gulmira/aze_passport.docx");
+                fields = mapFieldsAzeGul(passportDto);
+            }
+            case KAZ -> {
+                document =  loadFile("gulmira/kaz_passport.docx");
+                fields = mapFieldsKgzNew(passportDto);
+            }
+            case KGZ -> {
+                if (passportDto.getNumber().startsWith("KP"))
+                    document = loadFile("gulmira/kgz_passport_newest.docx");
+                else
+                    document =  loadFile("gulmira/kgz_passport_new.docx");
+                fields = mapFieldsKgzNewGul(passportDto);
+            }
+            case TJK -> {
+                document = loadFile("gulmira/tjk_passport.docx");
+                fields = mapFieldsTjk(passportDto);
+            }
+            case PHL -> {
+                document = loadFile("gulmira/phl_passport.docx");
+                fields = mapFieldsPhl(passportDto);
+            }
+            default -> throw new BotException("Только паспорта UZB, IND, TUR, TKM, AZE, KAZ, TJK, KGZ, PHL");
+        }
+        replaceFieldInLayer(document, fields);
+        return document;
+    }
+
+    private static XWPFDocument ashimExecute(CountryCode country, PassportDto dto) {
+        Map<String, String> fields;
+        XWPFDocument document;
+        if (country != CountryCode.KGZ)
+            throw new BotException("Пока что только KGZ");
+        if (dto.getNumber().startsWith("A")) {
+            document = loadFile("ashim/kgz_passport_old.docx");
+            fields = mapFieldsKgzOldAshim(dto);
+        } else {
+            document = loadFile("ashim/kgz_passport_new.docx");
+            fields = mapFieldsKgzNewAshim(dto);
+        }
+        replaceField(document.getParagraphs(), fields);
+        replaceFieldInLayer(document, fields);
+        return document;
+    }
+
+
+    private static Map<String, String> mapFieldsTjk(PassportDto dto) {
+        String name = dto.getPerson().patronymic().isEmpty() ? dto.getPerson().name()
+                : dto.getPerson().name() + " " + dto.getPerson().patronymic();
+        Map<String, String> values = new HashMap<>();
+        values.put("Поля0", dto.getNumber());
+        values.put("Поля1", dto.getPerson().surname());
+        values.put("Поля2", name);
+        values.put("Поля4", dto.getPerson().birth_date());
+        values.put("Поля7", dto.getIssueDate());
+        values.put("Поля8", dto.getExpiryDate());
+        values.put("Поля9", translateAuthority(dto.getIssueAuthority()));
+        values.put("Ген1", dto.getPerson().gender());
+        return values;
+    }
+    private static Map<String, String> mapFieldsInd(PassportDto dto) {
+        Map<String, String> values = mapFieldsTjk(dto);
+        values.put("Поля6", dto.getPerson().birth_place());
+        values.put("Поля9", dto.getPlace_of_issue());
+        values.put("Поля2", dto.getPerson().name());
+        return values;
+    }
+    private static Map<String, String> mapFieldsTur(PassportDto dto) {
+        Map<String, String> values = mapFieldsInd(dto);
+        values.put("Поля5", dto.getPerson().personal_number());
+        values.put("Поля4", generateFullMonthFormat(dto.getPerson().birth_date()));
+        values.put("Поля7", generateFullMonthFormat(dto.getIssueDate()));
+        values.put("Поля8", generateFullMonthFormat(dto.getExpiryDate()));
+        values.put("Поля9", dto.getIssued_by());
+        return values;
+    }
+    private static Map<String, String> mapFieldsPhl(PassportDto dto) {
+        Map<String, String> values = mapFieldsTur(dto);
+        values.put("Поля2", dto.getPerson().given_names());
+        values.put("СПФип0", dto.getPerson().middle_name());
+        values.put("Поля4", capitalizeFullMonthFormat(generateFullMonthFormat(dto.getPerson().birth_date())));
+        values.put("Поля7", capitalizeFullMonthFormat(generateFullMonthFormat(dto.getIssueDate())));
+        values.put("Поля8", capitalizeFullMonthFormat(generateFullMonthFormat(dto.getExpiryDate())));
+        values.put("Поля9", dto.getIssueAuthority());
+        return values;
+    }
+    private static Map<String, String> mapFieldsKgzNew(PassportDto dto) {
+        Map<String, String> values = mapFieldsTjk(dto);
+        values.put("Поля5", dto.getPerson().personal_number());
+        values.put("Поля6", translateBirthPlace(dto.getPerson().birth_place()));
+        return values;
+    }
+    private static Map<String, String> mapFieldsKgzNewGul(PassportDto dto) {
+        Map<String, String> values = mapFieldsKgzNew(dto);
+        String authority = dto.getIssueAuthority().contains("SRS") ?
+                dto.getIssueAuthority().replace("SRS", "ГОСУДАРСТВЕННАЯ РЕГИСТРАЦИОННАЯ СЛУЖБА") : dto.getIssueAuthority();
+        values.put("Поля9", authority);
+        return values;
+    }
+    private static Map<String, String> mapFieldsKgzOldAshim(PassportDto dto) {
+        Map<String, String> values = mapFieldsKgzOld(dto);
+        values.put("Ген1", dto.getPerson().gender().startsWith("Ж") ? "ЖЕН" : "МУЖ");
+        values.put("Поля4", generateDateFormatWithSpace(dto.getPerson().birth_date()));
+        values.put("Поля7", generateDateFormatWithSpace(dto.getIssueDate()));
+        values.put("Поля8", generateDateFormatWithSpace(dto.getExpiryDate()));
+        values.put("СПАш3", DocumentMRZGenerator.buildMrzFirstLine(dto.getPerson().surname_in_eng(), dto.getPerson().name_in_eng(), dto.getPerson().patronymic_in_eng()));
+        values.put("СПАш4", generateMRZ2Ashim(DocumentMRZGenerator.generateMrzSecondLine(dto)));
+        return values;
+    }
+    private static Map<String, String> mapFieldsKgzNewKairat(PassportDto dto) {
+        Map<String, String> values = mapFieldsKgzNewAshim(dto);
+        values.replace("СПАш1", dto.getPerson().personal_number() + "<<"
+        + dto.getPerson().surname() + " " + dto.getPerson().name() + "<<"
+        + generateDateFormatWithSpace(dto.getPerson().birth_date()));
+        return values;
+    }
+    private static Map<String, String> mapFieldsKgzNewAshim(PassportDto dto) {
+        String[] passportNumberAshim = generatePassNumAshim(dto.getNumber());
+
+        Map<String, String> values = mapFieldsKgzNew(dto);
+        values.put("Поля4", generateDateFormatWithSpace(dto.getPerson().birth_date()));
+        values.put("Поля7", generateDateFormatWithSpace(dto.getIssueDate()));
+        values.put("Поля8", generateDateFormatWithSpace(dto.getExpiryDate()));
+        values.put("СПАш1", passportNumberAshim[0]);
+        values.put("СПАш2", passportNumberAshim[1]);
+        values.put("СПАш3", DocumentMRZGenerator.buildMrzFirstLine(dto.getPerson().surname_in_eng(), dto.getPerson().name_in_eng(), dto.getPerson().patronymic_in_eng()));
+        values.put("СПАш4", generateMRZ2Ashim(DocumentMRZGenerator.generateMrzSecondLine(dto)));
+        values.put("СПАш5", generateSpecField5Ashim(dto.getPerson()));
+        return values;
+    }
+    private static Map<String, String> mapFieldsKgzOld(PassportDto dto) {
+        Map<String, String> values = mapFieldsKgzNew(dto);
+        values.put("Поля2", dto.getPerson().name());
+        return values;
+    }
+    private static Map<String, String> mapFieldsUzbNew(PassportDto dto) {
+        Map<String, String> values = mapFieldsKgzOld(dto);
+        values.remove("Поля5");
+        values.put("Поля3", dto.getPerson().patronymic());
+        return values;
+    }
+    private static Map<String, String> mapFieldsUzbOld(PassportDto dto) {
+        Map<String, String> values = mapFieldsUzbNew(dto);
+        values.put("СПУз0", dto.getPerson().gender().startsWith("Ж") ? "Женский" : "Мужской");
+        values.put("СПУз1", capitalizeFirstLetter(dto.getPerson().nationality()));
+        values.put("СПУз2", capitalizeFirstLetter(dto.getPerson().birth_place()));
+        values.put("СПУз3", translateAuthority(dto.getIssueAuthority()));
+        return values;
+    }
+    private static Map<String, String> mapFieldsAzeGul(PassportDto dto) {
+        Map<String, String> values = mapFieldsKgzNew(dto);
+        values.put("Поля6", dto.getPerson().birth_place());
+        values.put("Ген1", dto.getPerson().gender());
+        values.put("СПАз0", dto.getNumber().chars().mapToObj(c -> (char) c + " ").collect(Collectors.joining()).trim());
+        return  values;
+    }
+    private static Map<String, String> mapFieldsAze(PassportDto dto) {
+        Map<String, String> values = mapFieldsKgzNew(dto);
+        values.put("Поля6", stringX2SlashSpace(dto.getPerson().birth_place()));
+        values.put("Ген1", stringX2Slash(dto.getPerson().gender()));
+        values.put("СПАз0", dto.getPerson().name());
+        values.put("СПАз1", translateAuthority(dto.getIssueAuthority()) + "/");
+        return values;
+    }
+    private static Map<String, String> mapFieldsArm(PassportDto dto) {
+        Map<String, String> values = mapFieldsUzbNew(dto);
+        values.put("СПАр0", generateFullMonthFormat(dto.getPerson().birth_date()));
+        values.put("СПАр1", generateFullMonthFormat(dto.getIssueDate()));
+        values.put("СПАр2", generateFullMonthFormat(dto.getExpiryDate()));
+        return values;
+    }
+
+    private static String[] generatePassNumAshim(String passportNumber) {
+        String[] result = {"", ""};
+        StringBuilder part1 = new StringBuilder(), part2 = new StringBuilder();
+        for (int i = 0; i < passportNumber.length(); i++) {
+            char ch = passportNumber.charAt(i);
+            if (i % 2 == 0) {
+                part1.append(ch).append(' ');
+            } else {
+                part2.append(ch).append(' ');
+            }
+        }
+        result[0] = part1.toString().trim();
+        result[1] = part2.toString().trim();
+
+        return result;
+    }
+    private static String generateMRZ2Ashim(String mrzSecondLine) {
+        StringBuilder mrz = new StringBuilder();
+        for (int i = 0; i < mrzSecondLine.length(); i++) {
+            if(i == 2 || i == 10 || i == 20)
+                mrz.append(" ");
+            mrz.append(mrzSecondLine.charAt(i));
+        }
+        return mrz.toString();
+    }
+    private static String generateSpecField5Ashim(PersonDto dto) {
+        String givenNames = dto.patronymic().isEmpty() ? dto.name() : dto.name() + " " + dto.patronymic();
+        return dto.personal_number() + "<<" + dto.surname() + " " +  givenNames + "<<" + generateDateFormatWithSpace(dto.birth_date());
+    }
+    private static String stringX2Slash(String string) {
+        return string + "/" + string;
+    }
+    private static String stringX2SlashSpace(String string) {
+        return string + " / " + string;
+    }
+
+    private static String translateAuthority(String authority) {
+        if (authority.contains("SRS"))
+            authority = authority.replace("SRS", "ГРС");
+        if (authority.contains("MIA"))
+            authority = authority.replace("MIA", "МВД");
+        if (authority.contains("PSK"))
+            authority = authority.replace("PSK", "ГЦП");
+        if (authority.contains("ХШБ"))
+            authority = authority.replace("ХШБ", "ПРС");
+        if (authority.equals("MINISTRY OF INTERNAL AFFAIRS"))
+            authority = "МИНИСТЕРСТВО ВНУТРЕННИХ ДЕЛ";
+        if (authority.equals("STATE PERSONALIZATION CENTRE"))
+            return "ГОСУДАРСТВЕННЫЙ ЦЕНТР ПЕРСОНАЛИЗАЦИИ";
+        if (authority.contains("SMST"))
+            authority = authority.replace("SMST", "ГОСУДАРСТВЕННАЯ МИГРАЦИОННАЯ СЛУЖБА ТУРКМЕНИСТАНА");
+        return authority;
+    }
+    private static String generateDateFormatWithSpace(String date) {
+        return date.replace(".", " ");
+    }
+
+    private static String generateFullMonthFormat(String date) {
+        String[] arr = date.split("\\.");
+        String month = "null";
+        switch (arr[1]) {
+            case "01" -> month = "ЯНВАРЯ";
+            case "02" -> month = "ФЕВРАЛЯ";
+            case "03" -> month = "МАРТА";
+            case "04" -> month = "АПРЕЛЯ";
+            case "05" -> month = "МАЯ";
+            case "06" -> month = "ИЮНЯ";
+            case "07" -> month = "ИЮЛЯ";
+            case "08" -> month = "АВГУСТА";
+            case "09" -> month = "СЕНТЯБРЯ";
+            case "10" -> month = "ОКТЯБРЯ";
+            case "11" -> month = "НОЯБРЯ";
+            case "12" -> month = "ДЕКАБРЯ";
+        }
+        return arr[0] + " " + month + " "  + arr[2];
+    }
+    private static String capitalizeFullMonthFormat(String name) {
+        return name.substring(0, 4) + name.substring(4).toLowerCase();
+    }
+    private static String capitalizeFirstLetter(String name) {
+        return name.substring(0, 1).toUpperCase() + name.substring(1).toLowerCase();
+    }
+    private static String translateBirthPlace(String birthPlace) {
+        if (birthPlace.contains("TKM") ||  birthPlace.contains("ТКМ")) {
+            return "ТУРКМЕНИСТАН";
+        }
+        if (birthPlace.contains("UZB") || birthPlace.contains("УЗБ"))
+            return "УЗБЕКИСТАН";
+        if (birthPlace.contains("TJK") || birthPlace.contains("ТЖК"))
+            return "ТАДЖИКИСТАН";
+        if (birthPlace.contains("RUS") || birthPlace.contains("РУС"))
+            return "РОССИЯ";
+        return birthPlace;
+    }
+    private static String detectTurkishPassGen(String issueDate, String issued_by) {
+        String firstGen = "1st", secondGen = "2nd",  thirdGen = "3rd";
+        boolean isRussianEmbassy = issued_by.contains("МОСКВА");
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy");
+        LocalDate date = LocalDate.parse(issueDate, formatter);
+        if (date.isBefore(LocalDate.of(2018, 4, 1))) {
+            return firstGen;
+        } else if (date.isBefore(LocalDate.of(2022, 8, 25))) {
+            return secondGen;
+        } else if (isRussianEmbassy) {
+            return secondGen;
+        } else {
+            return thirdGen;
+        }
+    }
+}
+</file>
+
+<file path="src/main/java/com/ravani/ravanibot/constants/SpecialUserDetails.java">
+package com.ravani.ravanibot.constants;
+
+public class SpecialUserDetails {
+    public static Long OWNER_CHAT_ID = 735283091L;
+
+    public static Long BEMA_CHAT_ID = 6337978201L;
+
+    public static Long GULMIRA_CHAT_ID = 8506403385L;
+
+    public static Long ASHIM_CHAT_ID = -4671846708L;
+
+    public static Long KAIRAT_CHAT_ID =  1372608437L;
+
+    public static Long GULMIRA_2_CHAT_ID = 350385543L;
+}
+</file>
+
+</files>
