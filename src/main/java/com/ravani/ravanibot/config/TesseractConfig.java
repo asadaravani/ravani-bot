@@ -11,5 +11,6 @@ import org.springframework.stereotype.Component;
 @Setter
 public class TesseractConfig {
 
+
     private String dataPath;
 }
